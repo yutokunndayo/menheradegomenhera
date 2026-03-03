@@ -6,7 +6,7 @@ react vite ts
 参考例:  
 > pages/Example.tsx  
 > 
-> pages/HomePage.tsx   
+> pages/HomePage.tsx  
 return文内にできるのは1つの要素のみなので、無名タグ`<></>`で囲ってその中にjsx記入
 `function Example()`と`export default Example;`がないと困る
 2. types/index.tsxに記入  
@@ -25,6 +25,7 @@ export { default as Example } from '../pages/example'
 > components/Header.tsx  
 > 
 > pages/Example.tsx  
+
 - 1. componentsにフォルダ作成
 - 2. indexにて宣言
 - 3. importから呼び出し->そのままタグを書くのみ
@@ -32,6 +33,7 @@ export { default as Example } from '../pages/example'
 5. tailwindcssについて  
 参考例:  
 > components/Header.tsx  
+
 タグの中にcssを記入可能  
 アニメーション以外はこれで実装可能だが、cssの文言が違うため使用する場合はtailwindcssチートシートを検索して参照  
 略語が多いのが特徴

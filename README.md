@@ -9,18 +9,21 @@ react vite ts
 > pages/HomePage.tsx  
   
 ファイル内return文内にできるのは1つの要素のみなので、無名タグ`<></>`で囲ってその中にjsx記入
-`function Example()`と`export default Example;`がないと困る
+`function Example()`と`export default Example;`がないと困る  
+
 2. types/index.tsxに記入  
 作った関数名をここに登録->App.tsxでRoute登録しておくことでどこでもこのページ呼び出しが可能->ページ遷移が楽に
 ```ts
 export { default as Example } from '../pages/example'
 ```
-ここの`default as Example`は必ず頭文字大文字で登録しよう->じゃないとコンパイルエラー
+ここの`default as Example`は必ず頭文字大文字で登録しよう->じゃないとコンパイルエラー  
+
 3. App.tsxにimport&Route登録  
 ```ts
 <Route path='/example' element={<Example />} />
 ```
-このpathはRoutePathと、実際のurlになるので、小文字+アンダーバーで記入推奨
+このpathはRoutePathと、実際のurlになるので、小文字+アンダーバーで記入推奨  
+
 4. コンポーネントを使用数場合  
 参考例:  
 > components/Header.tsx  
@@ -30,7 +33,8 @@ export { default as Example } from '../pages/example'
 - 1. componentsにフォルダ作成
 - 2. indexにて宣言
 - 3. importから呼び出し->そのままタグを書くのみ
-- 4. propsをつければ引数を設定可能、詳しくはコメント
+- 4. propsをつければ引数を設定可能、詳しくはコメント  
+
 5. tailwindcssについて  
 参考例:  
 > components/Header.tsx  

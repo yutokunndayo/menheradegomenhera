@@ -41,10 +41,29 @@ export { default as Example } from '../pages/example'
 
 タグの中にcssを記入可能  
 アニメーション以外はこれで実装可能だが、cssの文言が違うため使用する場合はtailwindcssチートシートを検索して参照  
-略語が多いのが特徴
-## 今後に向けて
-0. 起動構成の作り方
-- 1. git clone 
-1. supabase
-現在未連携なので関連フォルダなし
-連携後npmインストールと
+略語が多いのが特徴  
+6. 相対パスの指定の仕方  
+参考例:  
+> pages/Example.tsx  
+
+コメント通りでreactは相対パスを許さないのでimportしてから書いてください  
+
+## 今後に向けて  
+0. 起動構成の作り方  
+```bash
+// まだクローンしたことないなら
+git clone https://github.com/yutokunndayo/menheradegomenhera.git
+cd クローンしたファイル名
+// すでにしてる(remoteがここになっている)なら
+git pull
+npm install
+npm run dev
+```  
+
+1. supabase  
+現在未連携なので関連フォルダなし  
+連携後supabase.jsのライブラリを追加、supabaseの環境変数を.envに書いてgitignoreに追加
+2. コーディング規約  
+適当に決めてください  
+僕はファイル名大文字,Route小文字とアンダーバー, 関数名キャメルケースで見たら何がしたいかわかる英文  
+でやってます  

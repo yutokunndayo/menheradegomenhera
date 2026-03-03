@@ -7,7 +7,8 @@ react vite ts
 > pages/Example.tsx  
 > 
 > pages/HomePage.tsx  
-return文内にできるのは1つの要素のみなので、無名タグ`<></>`で囲ってその中にjsx記入
+  
+ファイル内return文内にできるのは1つの要素のみなので、無名タグ`<></>`で囲ってその中にjsx記入
 `function Example()`と`export default Example;`がないと困る
 2. types/index.tsxに記入  
 作った関数名をここに登録->App.tsxでRoute登録しておくことでどこでもこのページ呼び出しが可能->ページ遷移が楽に

@@ -27,14 +27,14 @@ export { default as Example } from '../pages/example'
 > 補足  
 > Routeを使用したい場合はnavigateで関数を作るのが多分楽でしょう
 ```tsx
+// AttiのRoutePathに飛ぶボタン
 import { useNavigate } from "react-router-dom";
 const navigate = useNavigate();
-const clickEvent = () => {
-  navigate('/path');
+const clickAttiEvent = () => {
+  navigate('/atti');
 };
-<button toClick = {clickEvent} />
+<button toClick = {clickAttiEvent} />
 ```
-
 
 4. コンポーネントを使用数場合  
 参考例:  

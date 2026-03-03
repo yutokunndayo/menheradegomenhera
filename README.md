@@ -1,6 +1,6 @@
 react vite ts
 # for develop
-## 新規ページを追加する場合
+## How To
 1. pagesにファイルを追加
 
 参考例:  
@@ -24,6 +24,18 @@ export { default as Example } from '../pages/example'
 ```
 このpathはRoutePathと、実際のurlになるので、小文字+アンダーバーで記入推奨  
 
+> 補足  
+> Routeを使用したい場合はnavigateで関数を作るのが多分楽でしょう
+```tsx
+import { useNavigate } from "react-router-dom";
+const navigate = useNavigate();
+const clickEvent = () => {
+  navigate('/path');
+};
+<button toClick = {clickEvent} />
+```
+
+
 4. コンポーネントを使用数場合  
 参考例:  
 > components/Header.tsx  
@@ -42,6 +54,7 @@ export { default as Example } from '../pages/example'
 タグの中にcssを記入可能  
 アニメーション以外はこれで実装可能だが、cssの文言が違うため使用する場合はtailwindcssチートシートを検索して参照  
 略語が多いのが特徴  
+
 6. 相対パスの指定の仕方  
 参考例:  
 > pages/Example.tsx  

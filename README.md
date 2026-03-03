@@ -5,6 +5,7 @@ react vite ts
 
 参考例:  
 > pages/Example.tsx  
+> 
 > pages/HomePage.tsx   
 return文内にできるのは1つの要素のみなので、無名タグ`<></>`で囲ってその中にjsx記入
 `function Example()`と`export default Example;`がないと困る
@@ -22,6 +23,7 @@ export { default as Example } from '../pages/example'
 4. コンポーネントを使用数場合  
 参考例:  
 > components/Header.tsx  
+> 
 > pages/Example.tsx  
 - 1. componentsにフォルダ作成
 - 2. indexにて宣言

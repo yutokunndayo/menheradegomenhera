@@ -9,6 +9,7 @@ import {
   AuthSelect,
   TitlePage,
   ForgotPassword,
+  Chat,
 } from './types/index'
 
 function App() {
@@ -32,10 +33,14 @@ function App() {
             {/* パスワード再設定（メール送信） */}
             <Route path='/forgot-password' element={<ForgotPassword />} />
 
-            {/* OAuth コールバック */}
+            {/* OAuth コールバック → チャット画面へ */}
             <Route path='/authCallback' element={<AuthCallback />} />
 
-            {/* ログイン後の画面 */}
+            {/* チャット画面（ログイン後のメイン画面） */}
+            <Route path='/chat' element={<Chat />} />
+
+            {/* その他のログイン後の画面 */}
+            <Route path='/home' element={<Home />} />
             <Route path='/account' element={<Account />} />
             <Route path='/example' element={<Example />} />
           </Routes>

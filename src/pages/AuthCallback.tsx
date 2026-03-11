@@ -2,8 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-function authCallback() {
-
+function AuthCallback() {
   const navigate = useNavigate();
   const ran = useRef(false);
 
@@ -34,25 +33,22 @@ function authCallback() {
           id: user.id,
           name: "名無しのゴメンヘラ",
           mail: user.email,
-        
-
         });
 
         if (upsertError) throw upsertError;
 
-        navigate("/account", { replace: true });
+        // ログイン後はチャット画面へ
+        navigate("/chat", { replace: true });
       } catch (e) {
         console.error("AuthCallback error:", e);
         navigate("/login", { replace: true });
       }
     };
 
-    run();}, [navigate]);
-return (
-    <p>
-       yo hoho
-        </p>
-)
-;
+    run();
+  }, [navigate]);
+
+  return <p style={{ textAlign: "center", marginTop: "40vh", color: "#f5317f" }}>読み込み中...</p>;
 }
-export default authCallback;
+
+export default AuthCallback;

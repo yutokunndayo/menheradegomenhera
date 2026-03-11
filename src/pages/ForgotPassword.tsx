@@ -1,0 +1,92 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
+import "../styles/login.css";
+
+function ForgotPassword() {
+    const navigate = useNavigate();
+    const [email, setEmail] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [sent, setSent] = useState(false);
+
+    const handleReset = async () => {
+        setError(null);
+        setLoading(true);
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+        });
+        setLoading(false);
+        if (error) {
+            setError(error.message);
+        } else {
+            setSent(true);
+        }
+    };
+
+    return (
+        <div className="auth-wrapper">
+            {/* スカラップヘッダー + ロゴ */}
+            <div className="scallop-header">
+                {/* 戻るボタン */}
+                <button className="back-btn" onClick={() => navigate("/login")}>
+                    <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11 4L6 9L11 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    戻る
+                </button>
+
+                <div className="auth-logo">
+                    {/* アイコンプレースホルダー: 後でimgタグに差し替え */}
+                    <div className="logo-icon-placeholder" aria-label="アプリアイコン">
+                        <span className="logo-icon-text">♡</span>
+                    </div>
+                    <p className="logo-appname">FamLink</p>
+                </div>
+            </div>
+
+            <div className="auth-container">
+                {sent ? (
+                    <div className="auth-section">
+                        <p className="auth-success">
+                            パスワード再設定のメールを送信しました。メールをご確認ください。
+                        </p>
+                        <button className="btn-outline" onClick={() => navigate("/login")}>
+                            ログインへ戻る
+                        </button>
+                    </div>
+                ) : (
+                    <div className="auth-section">
+                        <div className="field-group">
+                            <label className="field-label">メールアドレス</label>
+                            <input
+                                className="field-input"
+                                type="email"
+                                placeholder="sample@email.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && handleReset()}
+                            />
+                        </div>
+
+                        {error && <p className="auth-error">{error}</p>}
+
+                        <button
+                            className="btn-primary"
+                            onClick={handleReset}
+                            disabled={loading || !email}
+                        >
+                            {loading ? "送信中..." : "再設定メールを送信"}
+                        </button>
+
+                        <button className="switch-link" onClick={() => navigate("/login")}>
+                            ログインへ戻る
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default ForgotPassword;

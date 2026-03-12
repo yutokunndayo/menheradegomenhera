@@ -42,7 +42,7 @@ function Register() {
                     <div className="logo-icon-placeholder" aria-label="アプリアイコン">
                         <span className="logo-icon-text">♡</span>
                     </div>
-                    <p className="logo-appname">Menhera</p>
+                    <p className="logo-appname">FamLink</p>
                 </div>
             </div>
 

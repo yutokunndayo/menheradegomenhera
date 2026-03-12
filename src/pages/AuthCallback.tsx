@@ -31,14 +31,27 @@ function AuthCallback() {
 
         const { error: upsertError } = await supabase.from("profiles").upsert({
           id: user.id,
-          name: "名無しのゴメンヘラ",
           mail: user.email,
+        }, {
+          // nameやgenderがすでにある場合は上書きしない
+          onConflict: "id",
+          ignoreDuplicates: true,
         });
 
         if (upsertError) throw upsertError;
 
-        // ログイン後はチャット画面へ
-        navigate("/chat", { replace: true });
+        // profilesのgenderが未設定（初回）ならSetupへ、設定済みならchatへ
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("gender")
+          .eq("id", user.id)
+          .single();
+
+        if (!profile?.gender) {
+          navigate("/setup", { replace: true });
+        } else {
+          navigate("/chat", { replace: true });
+        }
       } catch (e) {
         console.error("AuthCallback error:", e);
         navigate("/login", { replace: true });

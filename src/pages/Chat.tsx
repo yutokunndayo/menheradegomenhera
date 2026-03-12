@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import TabBar from "../components/TabBar";
-import "./chat.css";
+import "../styles/Chat.css";
 
 // ===== 型定義 =====
 interface Message {

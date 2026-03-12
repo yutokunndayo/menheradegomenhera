@@ -47,9 +47,6 @@ export default function HomePage() {
 
       {/* ===== ヘッダー ===== */}
       <div className="header">
-        <div className="header">
-        </div>
-
       </div>
 
 

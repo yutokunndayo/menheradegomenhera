@@ -72,7 +72,7 @@ function Setup() {
                 id: user.id,
                 name: name.trim(),
                 gender,
-                icon_url: iconUrl,
+                avatar: iconUrl,
             });
             if (upsertError) throw upsertError;
 

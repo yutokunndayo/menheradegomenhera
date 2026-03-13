@@ -5,11 +5,12 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 // 画像ファイルの読み込み
-import header from "../assets/header.png"
-import decor from "../assets/decor.png"
 import accountIcon from "../assets/registration-information.png"
 import logoutIcon from "../assets/logout.png"
 import deleteIcon from "../assets/account-delete.png"
+
+// ヘッダーコンポーネント
+import HomePageHeader from "../components/HomePageHeader"
 
 // CSSファイルの読み込み
 import "../styles/HomePage.css"
@@ -45,44 +46,9 @@ export default function HomePage() {
 
     <div className="page">
 
-      {/* ===== ヘッダー ===== */}
-      <div className="header">
-      </div>
-
-
-      {/* ===== 装飾画像 ===== */}
-      <img src={decor} className="decor" />
-
-
-      {/* ===== プロフィール ===== */}
-      <div className="profile">
-
-        {/* アイコン画像（クリックすると変更できる） */}
-        <label className="icon-label">
-
-          {/* 画像選択input（非表示） */}
-          <input
-            type="file"
-            className="icon-input"
-            onChange={handleIconChange}
-          />
-
-          {/* アイコン表示 */}
-          <img
-            src={icon ?? "https://placehold.jp/150x150.png"}
-            className="icon"
-          />
-
-        </label>
-
-        {/* ユーザー名 */}
-        <h2 className="username">
-          彼女ちゃん
-        </h2>
-
-      </div>
-
-
+      {/* ===== ヘッダー（コンポーネント化）===== */}
+      <HomePageHeader username="彼女ちゃん" />
+      
       {/* ===== メニュー ===== */}
       <div className="menu">
 

@@ -1,0 +1,292 @@
+/* ===== chat.css ===== */
+
+/*
+  ===== 性別テーマの仕組み =====
+
+  バブルクラスは Chat.tsx の GENDER_THEME で決まる。
+  現在の対応:
+    自分が彼氏  → .bubble-me-boyfriend      （青紫系）
+    相手が彼女  → .bubble-partner-girlfriend  （ホットピンク）
+    自分が彼女  → .bubble-me-girlfriend      （ピンク系）  ← 将来用
+    相手が彼氏  → .bubble-partner-boyfriend   （青紫系）   ← 将来用
+
+  新しい性別テーマを追加したい場合:
+  1. 下の「将来用」クラスの色を決めて定義する
+  2. Chat.tsx の GENDER_THEME に新しいエントリを追加する
+  それだけで自動的に切り替わる
+*/
+
+:root {
+    --pink: #f5317f;
+    --pink-dark: #d41f6a;
+    --pink-light: #ff6fa8;
+    --pink-pale: #fce4ec;
+    --pink-bg: #fff5f8;
+
+    /* 彼氏側バブル色（青紫） */
+    --boyfriend-bubble: #c9bfed;
+    --boyfriend-bubble-dark: #b0a3e0;
+
+    /* 彼女側バブル色（ホットピンク） */
+    --girlfriend-bubble: #f5317f;
+
+    --white: #ffffff;
+    --text-main: #333333;
+}
+
+/* ===== 全体ラッパー ===== */
+.chat-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    background: var(--white);
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+/* ===== スカラップヘッダー ===== */
+.chat-header {
+    background: var(--pink);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 44px 16px 12px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.chat-header::after {
+    content: "";
+    display: block;
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    width: 100%;
+    height: 22px;
+    background: var(--white);
+    -webkit-mask-image: radial-gradient(circle at 12px 0, transparent 11px, black 12px);
+    -webkit-mask-size: 24px 22px;
+    -webkit-mask-position: 0 0;
+    mask-image: radial-gradient(circle at 12px 0, transparent 11px, black 12px);
+    mask-size: 24px 22px;
+    mask-position: 0 0;
+}
+
+.chat-header-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.chat-partner-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-partner-placeholder {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-header-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+}
+
+/* ===== メッセージエリア ===== */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 140px;
+}
+
+/* 上下装飾画像（imgタグに差し替えて使う） */
+.chat-deco-top {
+    width: 100%;
+    pointer-events: none;
+    margin-bottom: 8px;
+}
+
+.chat-deco-bottom {
+    width: 100%;
+    pointer-events: none;
+    margin-top: 8px;
+}
+
+/* ===== メッセージ行 ===== */
+.chat-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.row-partner {
+    justify-content: flex-start;
+}
+
+.row-me {
+    justify-content: flex-end;
+}
+
+.chat-row-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.bubble-partner-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.bubble-partner-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--pink-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== バブルラッパー ===== */
+.chat-bubble-wrap {
+    position: relative;
+    max-width: 65%;
+}
+
+/* ===== バブル共通 ===== */
+.chat-bubble {
+    padding: 10px 14px;
+    border-radius: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-word;
+    color: white;
+}
+
+/* ===== 自分側バブル: 彼氏テーマ（青紫） ===== */
+.bubble-me-boyfriend {
+    background: var(--boyfriend-bubble);
+    border-bottom-right-radius: 4px;
+}
+
+/* ===== 相手側バブル: 彼女テーマ（ホットピンク） ===== */
+.bubble-partner-girlfriend {
+    background: var(--girlfriend-bubble);
+    border-bottom-left-radius: 4px;
+}
+
+/* ===== 将来用: 自分が彼女テーマ（ピンク） ===== */
+/* Chat.tsx の GENDER_THEME["girlfriend"].myBubbleClass に対応 */
+.bubble-me-girlfriend {
+    background: var(--pink-light);
+    border-bottom-right-radius: 4px;
+}
+
+/* ===== 将来用: 相手が彼氏テーマ（青紫） ===== */
+/* Chat.tsx の GENDER_THEME["girlfriend"].partnerBubbleClass に対応 */
+.bubble-partner-boyfriend {
+    background: var(--boyfriend-bubble);
+    border-bottom-left-radius: 4px;
+}
+
+/* ===== リボン装飾 ===== */
+/*
+  画像で差し込む場合は bubble-ribbon-placeholder を削除して
+  <img src="..." className="bubble-ribbon ribbon-partner"> に差し替える
+*/
+.bubble-ribbon {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    bottom: -6px;
+}
+
+.bubble-ribbon-placeholder {
+    position: absolute;
+    font-size: 12px;
+    bottom: -8px;
+    line-height: 1;
+}
+
+.ribbon-partner {
+    right: -4px;
+}
+
+.ribbon-me {
+    left: -4px;
+}
+
+/* ===== 入力バー ===== */
+.chat-input-bar {
+    position: fixed;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: white;
+    border-top: 1px solid var(--pink-pale);
+    z-index: 50;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 10px 16px;
+    background: var(--pink-pale);
+    border: none;
+    border-radius: 24px;
+    font-size: 15px;
+    color: var(--text-main);
+    outline: none;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+.chat-input::placeholder {
+    color: #e8a0b8;
+}
+
+.chat-send-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--pink);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.chat-send-btn:hover:not(:disabled) {
+    background: var(--pink-dark);
+}
+
+.chat-send-btn:active:not(:disabled) {
+    transform: scale(0.92);
+}
+
+.chat-send-btn:disabled {
+    background: #f0c0d4;
+    cursor: not-allowed;
+}

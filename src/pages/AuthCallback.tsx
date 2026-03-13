@@ -2,8 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-function authCallback() {
-
+function AuthCallback() {
   const navigate = useNavigate();
   const ran = useRef(false);
 
@@ -32,27 +31,37 @@ function authCallback() {
 
         const { error: upsertError } = await supabase.from("profiles").upsert({
           id: user.id,
-          name: "名無しのゴメンヘラ",
           mail: user.email,
-        
-
+        }, {
+          // nameやgenderがすでにある場合は上書きしない
+          onConflict: "id",
+          ignoreDuplicates: true,
         });
 
         if (upsertError) throw upsertError;
 
-        navigate("/account", { replace: true });
+        // profilesのgenderが未設定（初回）ならSetupへ、設定済みならchatへ
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("gender")
+          .eq("id", user.id)
+          .single();
+
+        if (!profile?.gender) {
+          navigate("/setup", { replace: true });
+        } else {
+          navigate("/chat", { replace: true });
+        }
       } catch (e) {
         console.error("AuthCallback error:", e);
         navigate("/login", { replace: true });
       }
     };
 
-    run();}, [navigate]);
-return (
-    <p>
-       yo hoho
-        </p>
-)
-;
+    run();
+  }, [navigate]);
+
+  return <p style={{ textAlign: "center", marginTop: "40vh", color: "#f5317f" }}>読み込み中...</p>;
 }
-export default authCallback;
+
+export default AuthCallback;

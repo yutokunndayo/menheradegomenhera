@@ -1,0 +1,572 @@
+/* ===== login.css — 認証画面共通スタイル ===== */
+
+:root {
+    --pink: #f5317f;
+    --pink-dark: #d41f6a;
+    --pink-light: #ff6fa8;
+    --pink-pale: #fce4ec;
+    --pink-bg: #fff5f8;
+    --pink-border: #f8bbd0;
+    --pink-muted: #f48fb1;
+    --white: #ffffff;
+    --text-main: #333333;
+    --text-sub: #aaaaaa;
+    --disabled-bg: #f0c0d4;
+}
+
+/* ===== リセット ===== */
+* {
+    box-sizing: border-box;
+}
+
+/* ===== ラッパー ===== */
+.auth-wrapper {
+    position: relative;
+    min-height: 100dvh;
+    background-color: var(--pink-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+/* ===== スカラップヘッダー ===== */
+.scallop-header {
+    width: 100%;
+    background: var(--pink);
+    position: relative;
+    padding-top: 56px;
+    padding-bottom: 0;
+    flex-shrink: 0;
+}
+
+.scallop-header::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 28px;
+    background: var(--pink-bg);
+    -webkit-mask-image: radial-gradient(circle at 14px 0, transparent 13px, black 14px);
+    -webkit-mask-size: 28px 28px;
+    -webkit-mask-position: 0 0;
+    mask-image: radial-gradient(circle at 14px 0, transparent 13px, black 14px);
+    mask-size: 28px 28px;
+    mask-position: 0 0;
+}
+
+/* ===== ロゴ（ヘッダー内） ===== */
+.auth-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 0 32px;
+}
+
+/*
+  アイコン差し込み方法:
+  .logo-icon-placeholder を削除して以下に差し替え
+  <img src="/icon.png" alt="アイコン" width="72" height="72" style={{ borderRadius: "50%" }} />
+*/
+.logo-icon-placeholder {
+    width: 72px;
+    height: 72px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2.5px solid rgba(255, 255, 255, 0.6);
+}
+
+.logo-icon-text {
+    font-size: 32px;
+    color: white;
+}
+
+.logo-appname {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    font-family: "Georgia", "Times New Roman", serif;
+    letter-spacing: 1px;
+    margin: 0;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* ===== メインコンテナ ===== */
+.auth-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 36px 28px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+/* ===== フォームセクション ===== */
+.auth-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ===== フィールド ===== */
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.field-label-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.field-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pink);
+}
+
+.field-hint {
+    font-size: 11px;
+    color: var(--text-sub);
+}
+
+.field-input {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1.5px solid var(--pink-border);
+    border-radius: 12px;
+    background: var(--white);
+    font-size: 15px;
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.field-input:focus {
+    border-color: var(--pink);
+    box-shadow: 0 0 0 3px rgba(245, 49, 127, 0.1);
+}
+
+.field-input::placeholder {
+    color: #ddbbcc;
+}
+
+/* ===== パスワード忘れリンク ===== */
+.forgot-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    color: var(--pink);
+    text-decoration: underline;
+    text-align: right;
+    cursor: pointer;
+    align-self: flex-end;
+    margin-top: 2px;
+}
+
+/* ===== ボタン ===== */
+.btn-primary {
+    width: 100%;
+    padding: 15px;
+    background: var(--pink);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 16px rgba(245, 49, 127, 0.3);
+    margin-top: 4px;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--pink-dark);
+    box-shadow: 0 6px 20px rgba(245, 49, 127, 0.4);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+    background: var(--disabled-bg);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.btn-outline {
+    width: 100%;
+    padding: 15px;
+    background: var(--white);
+    color: var(--pink);
+    border: 2px solid var(--pink);
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+
+.btn-outline:hover {
+    background: var(--pink-pale);
+    box-shadow: 0 2px 8px rgba(245, 49, 127, 0.15);
+}
+
+/* ===== Googleボタン ===== */
+.btn-google {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--white);
+    color: var(--text-main);
+    border: 1.5px solid var(--pink-border);
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+
+.btn-google:hover {
+    background: var(--pink-pale);
+    box-shadow: 0 2px 8px rgba(245, 49, 127, 0.12);
+}
+
+/*
+  Googleアイコン差し込み方法:
+  .google-icon-placeholder を削除して以下に差し替え
+  <img src="/google-icon.svg" width="20" height="20" alt="Google" />
+*/
+.google-icon-placeholder {
+    width: 22px;
+    height: 22px;
+    background: #4285f4;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ===== 区切り線 ===== */
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0;
+    color: var(--pink-muted);
+    font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--pink-border);
+}
+
+/* ===== 選択画面ボタン ===== */
+.select-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ===== 利用規約チェック ===== */
+.terms-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    margin: 4px 0;
+}
+
+.custom-checkbox {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--pink);
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+
+.custom-checkbox.checked {
+    background: var(--pink);
+    border-color: var(--pink);
+}
+
+.custom-checkbox svg {
+    width: 12px;
+    height: 10px;
+}
+
+.terms-text {
+    font-size: 13px;
+    color: var(--pink);
+}
+
+/* ===== 切り替えリンク ===== */
+.switch-link {
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: var(--text-main);
+    text-align: center;
+    cursor: pointer;
+    padding: 4px 0;
+    font-weight: 500;
+}
+
+.switch-link:hover {
+    color: var(--pink);
+    text-decoration: underline;
+}
+
+/* ===== 戻るボタン ===== */
+.back-btn {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 10;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 0;
+}
+
+.back-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ===== エラー / 成功メッセージ ===== */
+.auth-error {
+    font-size: 13px;
+    color: #e53935;
+    text-align: center;
+    margin: 0;
+    background: #ffeaea;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+.auth-success {
+    font-size: 13px;
+    color: #2e7d52;
+    text-align: center;
+    background: #e8f5ee;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 0;
+}
+
+/* ===== タイトル画面 ===== */
+.title-wrapper {
+    position: relative;
+    min-height: 100dvh;
+    background: linear-gradient(160deg, var(--pink) 0%, var(--pink-light) 50%, var(--pink-pale) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+/* タイトル画面の丸い装飾 */
+.title-deco-circle-1 {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    top: -80px;
+    right: -80px;
+    pointer-events: none;
+}
+
+.title-deco-circle-2 {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    bottom: -60px;
+    left: -60px;
+    pointer-events: none;
+}
+
+.title-deco-circle-3 {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    bottom: 100px;
+    right: 30px;
+    pointer-events: none;
+}
+
+.title-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+/*
+  タイトルアイコン差し込み方法:
+  .title-icon-placeholder を削除して以下に差し替え
+  <img src="/icon.png" alt="アイコン" width="110" height="110" style={{ borderRadius: "50%" }} />
+*/
+.title-icon-placeholder {
+    width: 110px;
+    height: 110px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.title-icon-text {
+    font-size: 52px;
+    color: white;
+}
+
+.title-appname {
+    font-size: 42px;
+    font-weight: 700;
+    color: white;
+    font-family: "Georgia", "Times New Roman", serif;
+    letter-spacing: 1.5px;
+    margin: 0;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== Setup画面（性別選択） ===== */
+.setup-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    text-align: center;
+    margin: 0 0 8px;
+}
+
+.setup-cards {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+.setup-card {
+    flex: 1;
+    max-width: 140px;
+    padding: 24px 16px 20px;
+    background: white;
+    border: 2px solid var(--pink-border);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.setup-card:hover {
+    border-color: var(--pink);
+    box-shadow: 0 4px 16px rgba(245, 49, 127, 0.15);
+}
+
+.setup-card.selected {
+    border-color: var(--pink);
+    box-shadow: 0 4px 20px rgba(245, 49, 127, 0.25);
+    transform: translateY(-2px);
+}
+
+/*
+  setup-card-icon-placeholder:
+  アイコン画像が用意できたら削除して
+  <img src="..." className="setup-card-img" /> に差し替える
+*/
+.setup-card-icon-placeholder {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 彼氏アイコン: 青紫系 */
+.boyfriend-icon {
+    background: #ede8fb;
+    color: #8b7ed8;
+}
+
+/* 彼女アイコン: ピンク系 */
+.girlfriend-icon {
+    background: var(--pink-pale);
+    color: var(--pink);
+}
+
+.setup-card-img {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.setup-card-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+/* 選択済みチェックマーク */
+.setup-check {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 22px;
+    height: 22px;
+    background: var(--pink);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

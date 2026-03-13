@@ -8,19 +8,6 @@
     z-index: 100;
 }
 
-.tabbar-notch {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 72px;
-    height: 40px;
-    background: transparent;
-    /* 中央ボタン用の半円くぼみ */
-    border-radius: 0 0 40px 40px;
-    pointer-events: none;
-}
-
 .tabbar {
     display: flex;
     align-items: center;
@@ -31,6 +18,7 @@
     position: relative;
 }
 
+/* ===== 通常タブ ===== */
 .tabbar-item {
     display: flex;
     flex-direction: column;
@@ -54,7 +42,7 @@
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
 
-/* 中央チャットボタン */
+/* ===== 中央チャットボタン ===== */
 .tabbar-center-btn {
     width: 56px;
     height: 56px;

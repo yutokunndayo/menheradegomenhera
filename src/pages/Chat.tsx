@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import TabBar from "../components/TabBar";
+import { FiSend } from "react-icons/fi";       // 送信ボタン
+import { FiUser } from "react-icons/fi";       // アイコンプレースホルダー（ヘッダー・バブル横）
 import "../styles/Chat.css";
 
 // ===== 型定義 =====
@@ -11,41 +13,37 @@ interface Message {
     time: string;
 }
 
-// ===== 性別の型 =====
-// 現在は "boyfriend"（自分） / "girlfriend"（相手）固定
-// カラム追加後は supabase の profiles.my_gender / profiles.partner_gender から取得する
-type Gender = "boyfriend" | "girlfriend";
+// ===== 自分の性別の型 =====
+// "boyfriend" = 自分が彼氏 → 相手は必ず彼女
+// "girlfriend" = 自分が彼女 → 相手は必ず彼氏
+// この1つの値だけで自分・相手 両方のスタイルが決まる
+type MyGender = "boyfriend" | "girlfriend";
 
 // ===== 性別ごとのスタイル設定 =====
-// ここを変えると見た目が切り替わる
+// myGender の値をキーにしてテーマを取り出す
 //
-// 【カラム追加後の対応手順】
-// 1. supabase の profiles テーブルに以下を追加してもらう
-//    - my_gender      : "boyfriend" | "girlfriend"
-//    - partner_gender : "boyfriend" | "girlfriend"
-// 2. 下の fetchGender() のコメントアウトを解除して実際に取得する
-// 3. GENDER_THEME の key に合わせて値が入ってくれば自動で見た目が切り替わる
-const GENDER_THEME: Record<Gender, {
-    // バブルのCSSクラス（chat.css で定義）
-    myBubbleClass: string;       // 自分のメッセージバブル
-    partnerBubbleClass: string;  // 相手のメッセージバブル
-    // リボン装飾の絵文字（画像に差し替える場合は ribbonImage を使う）
-    myRibbon: string;
-    partnerRibbon: string;
-    // リボン画像パス（画像を用意したら文字列で指定、null なら絵文字にフォールバック）
-    myRibbonImage: string | null;
-    partnerRibbonImage: string | null;
+// 【リボン画像を差し込む場合】
+// myRibbonImage / partnerRibbonImage を null から画像パスに変更する
+// 例: myRibbonImage: "/ribbons/blue-ribbon.png"
+// null のままなら myRibbon / partnerRibbon の絵文字にフォールバックする
+const GENDER_THEME: Record<MyGender, {
+    myBubbleClass: string;             // 自分バブルのCSSクラス名（Chat.cssで定義）
+    partnerBubbleClass: string;        // 相手バブルのCSSクラス名（Chat.cssで定義）
+    myRibbon: string;                  // 自分バブルのリボン絵文字（画像がない場合のフォールバック）
+    partnerRibbon: string;             // 相手バブルのリボン絵文字（画像がない場合のフォールバック）
+    myRibbonImage: string | null;      // 自分バブルのリボン画像パス（null=絵文字を使う）
+    partnerRibbonImage: string | null; // 相手バブルのリボン画像パス（null=絵文字を使う）
 }> = {
-    // 自分が彼氏・相手が彼女 のテーマ
+    // 自分が彼氏のテーマ（相手は彼女）
     boyfriend: {
         myBubbleClass: "bubble-me-boyfriend",
         partnerBubbleClass: "bubble-partner-girlfriend",
         myRibbon: "🎀",
         partnerRibbon: "🎀",
-        myRibbonImage: null,       // 例: "/ribbons/blue-ribbon.png"
-        partnerRibbonImage: null,  // 例: "/ribbons/pink-ribbon.png"
+        myRibbonImage: null,
+        partnerRibbonImage: null,
     },
-    // 自分が彼女・相手が彼氏 のテーマ（将来用）
+    // 自分が彼女のテーマ（相手は彼氏）
     girlfriend: {
         myBubbleClass: "bubble-me-girlfriend",
         partnerBubbleClass: "bubble-partner-boyfriend",
@@ -56,7 +54,7 @@ const GENDER_THEME: Record<Gender, {
     },
 };
 
-// ===== ダミーメッセージ（DBに繋ぐ場合は差し替え） =====
+// ===== ダミーメッセージ（DBに繋いだら差し替え） =====
 const dummyMessages: Message[] = [
     { id: "1", sender: "partner", text: "会いたい", time: "10:00" },
     { id: "2", sender: "me", text: "俺もだよ\n早く会いたい", time: "10:01" },
@@ -74,51 +72,86 @@ function Chat() {
     const [partnerName, setPartnerName] = useState("彼女ちゃん");
     const [partnerIcon, setPartnerIcon] = useState<string | null>(null);
 
-    // ===== 性別 state =====
-    // 現在は固定値。カラム追加後は fetchGender() で取得した値をセットする
-    // myGender    : 自分の性別（バブル色・装飾を決める）
-    // partnerGender: 相手の性別（相手バブル色・装飾を決める）
-    const [myGender, setMyGender] = useState<Gender>("boyfriend");
-    const [partnerGender, setPartnerGender] = useState<Gender>("girlfriend");
+    // ===== 自分の性別 =====
+    // この1つのstateだけで自分・相手 両方のテーマが切り替わる
+    // 初期値は "boyfriend"（DBから取得できるまでのフォールバック）
+    const [myGender, setMyGender] = useState<MyGender>("boyfriend");
 
-    // 現在の性別に対応するテーマを取得
-    // ※ myGender を基準にテーマを選んでいる（自分が彼氏か彼女かで全体テーマが変わる）
+    // myGender → GENDER_THEME[myGender] でテーマオブジェクトを取得
     const theme = GENDER_THEME[myGender];
 
+    // メッセージエリアの一番下を参照するref（自動スクロール用）
     const bottomRef = useRef<HTMLDivElement>(null);
 
+    // ===== メッセージが増えたら最下部へスクロール =====
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
+    // ===== Supabaseからプロフィール情報を取得 =====
+    // テーブル定義:
+    //   profiles: id, name, gender, partner(UUID), avatar(path)
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchProfile = async () => {
+            // ログイン中のユーザーを取得する
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            // ===== パートナー情報・性別の取得 =====
-            // 【カラム追加後】以下のコメントを解除して使う
-            // profiles テーブルに my_gender, partner_gender, name, icon_url が追加された想定
-            //
-            // const { data } = await supabase
-            //   .from("profiles")
-            //   .select("name, icon_url, my_gender, partner_gender")
-            //   .eq("id", user.id)
-            //   .single();
-            //
-            // if (data) {
-            //   setPartnerName(data.name ?? "彼女ちゃん");
-            //   setPartnerIcon(data.icon_url ?? null);
-            //   setMyGender(data.my_gender ?? "boyfriend");
-            //   setPartnerGender(data.partner_gender ?? "girlfriend");
-            // }
+            // ── Step1: 自分のプロフィールを取得 ──
+            // profiles テーブルから自分の name / gender / partner(相手のid) / avatar を取得する
+            const { data: myProfile } = await supabase
+                .from("profiles")
+                .select("name, gender, partner, avatar")
+                .eq("id", user.id)
+                .single();
+
+            if (!myProfile) return;
+
+            // gender は Setup.tsx で保存した "boyfriend" / "girlfriend" が入ってくる
+            // この1行でテーマ全体（自分・相手の両方のバブル色・装飾）が切り替わる
+            setMyGender((myProfile.gender as MyGender) ?? "boyfriend");
+
+            // ── Step2: パートナーのプロフィールを取得 ──
+            // myProfile.partner が自分のDBに入っている相手のUUID
+            // そのUUIDで相手の name / avatar を取得する
+            if (myProfile.partner) {
+                const { data: partnerProfile } = await supabase
+                    .from("profiles")
+                    .select("name, avatar")
+                    .eq("id", myProfile.partner)
+                    .single();
+
+                if (partnerProfile) {
+                    // パートナーの名前をヘッダーに表示する
+                    setPartnerName(partnerProfile.name ?? "彼女ちゃん");
+
+                    // パートナーのアバター画像パスをStorageのURLに変換してセットする
+                    // avatar カラムには Storage のファイルパスが入っている想定
+                    if (partnerProfile.avatar) {
+                        const { data: urlData } = supabase.storage
+                            .from("avatars")
+                            .getPublicUrl(partnerProfile.avatar);
+                        setPartnerIcon(urlData.publicUrl);
+                    }
+                }
+            }
         };
-        fetchData();
+        fetchProfile();
     }, []);
 
+    // ===== メッセージ送信処理 =====
     const handleSend = () => {
         const text = input.trim();
         if (!text) return;
+
+        // 新しいメッセージオブジェクトを作って末尾に追加する
+        // TODO: DBのメッセージストレージテーブルへの保存も追加する
+        //   supabase.from("messages").insert({
+        //     id: user.id,          // 送信者のid
+        //     message: text,        // 内容
+        //     sendAt: new Date(),   // 送った時間
+        //     isMemory: false,      // チャット（一言日記ではない）
+        //   })
         const newMsg: Message = {
             id: Date.now().toString(),
             sender: "me",
@@ -133,22 +166,23 @@ function Chat() {
         <div className="chat-wrapper">
 
             {/* ===== スカラップヘッダー ===== */}
+            {/* chat.css の .chat-header::after でスカラップ（波型）下端を描画している */}
             <div className="chat-header">
+
+                {/* パートナーのアイコン */}
+                {/* partnerIcon が null のうちは FiUser アイコンをプレースホルダーとして表示 */}
+                {/* Step2 でパートナーの avatar が取得できたら img に自動切り替わる */}
                 <div className="chat-header-icon">
                     {partnerIcon ? (
-                        // アイコン画像が設定されたらこちらが表示される
                         <img src={partnerIcon} alt={partnerName} className="chat-partner-img" />
                     ) : (
-                        // アイコン未設定時のプレースホルダー
-                        // Home.tsx でアイコンを設定したら partnerIcon に URL を渡すだけで切り替わる
                         <div className="chat-partner-placeholder" aria-label="パートナーアイコン">
-                            <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
-                                <circle cx="12" cy="8" r="4" stroke="white" strokeWidth="1.8" />
-                                <path d="M4 20C4 16.69 7.58 14 12 14C16.42 14 20 16.69 20 20" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
-                            </svg>
+                            <FiUser size={22} color="white" strokeWidth={1.8} />
                         </div>
                     )}
                 </div>
+
+                {/* パートナーの名前（Step2 で取得した name が入る） */}
                 <p className="chat-header-name">{partnerName}</p>
             </div>
 
@@ -156,36 +190,33 @@ function Chat() {
             <div className="chat-messages">
 
                 {/*
-          ===== 上部装飾画像 =====
-          チャット画面上部（最初のメッセージより上）に表示する装飾
-          画像を用意したら以下のコメントを解除して画像パスを指定する
-          性別によって画像を変えたい場合は myGender で分岐する
+                    ===== 上部装飾画像 =====
+                    メッセージ一覧の一番上に表示する装飾
+                    画像を用意したらコメントを解除して画像パスを指定する
 
-          例:
-          <img
-            src={myGender === "boyfriend" ? "/deco/top-blue.png" : "/deco/top-pink.png"}
-            alt=""
-            className="chat-deco-top"
-          />
-        */}
+                    myGender で画像を切り替えたい場合:
+                    <img
+                        src={myGender === "boyfriend" ? "/deco/top-blue.png" : "/deco/top-pink.png"}
+                        alt=""
+                        className="chat-deco-top"
+                    />
+                */}
 
                 {messages.map((msg, i) => {
                     const isPartner = msg.sender === "partner";
 
-                    // 連続するパートナーメッセージの最初だけアイコンを表示
+                    // ===== アイコン表示判定 =====
+                    // 連続するパートナーメッセージの最初の1件だけアイコンを表示する
                     const showIcon =
                         isPartner && (i === 0 || messages[i - 1].sender !== "partner");
 
                     // ===== バブルクラスの決定 =====
-                    // 自分 → theme.myBubbleClass
-                    // 相手 → theme.partnerBubbleClass
-                    // テーマは myGender の値によって GENDER_THEME から取得される
+                    // myGender → theme → bubbleClass の順で決まる
                     const bubbleClass = isPartner
                         ? theme.partnerBubbleClass
                         : theme.myBubbleClass;
 
                     // ===== リボン装飾の決定 =====
-                    // 画像がある場合は img タグで表示、なければ絵文字にフォールバック
                     const ribbonImage = isPartner
                         ? theme.partnerRibbonImage
                         : theme.myRibbonImage;
@@ -198,39 +229,42 @@ function Chat() {
                             key={msg.id}
                             className={`chat-row ${isPartner ? "row-partner" : "row-me"}`}
                         >
-                            {/* パートナー側のアイコン領域 */}
+                            {/* ===== パートナー側のアイコン領域 ===== */}
+                            {/* 自分のメッセージ（row-me）のときはこのブロック自体を描画しない */}
                             {isPartner && (
                                 <div className="chat-row-icon">
+                                    {/* showIcon=true のときだけアイコンを描画 */}
                                     {showIcon && (
                                         partnerIcon ? (
                                             <img src={partnerIcon} alt="" className="bubble-partner-img" />
                                         ) : (
                                             <div className="bubble-partner-placeholder">
-                                                <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
-                                                    <circle cx="12" cy="8" r="4" stroke="white" strokeWidth="2" />
-                                                    <path d="M4 20C4 16.69 7.58 14 12 14C16.42 14 20 16.69 20 20" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                                                </svg>
+                                                <FiUser size={16} color="white" strokeWidth={2} />
                                             </div>
                                         )
                                     )}
                                 </div>
                             )}
 
+                            {/* ===== バブル本体 + リボン装飾 ===== */}
                             <div className="chat-bubble-wrap">
-                                {/* バブル本体 — bubbleClass で色・形が切り替わる */}
+
+                                {/* バブル本体 */}
+                                {/* bubbleClass（myGender から決まるCSSクラス）で色・形が切り替わる */}
                                 <div className={`chat-bubble ${bubbleClass}`}>
+                                    {/* \n を改行として表示するために split("\n") して <br /> を挿入する */}
                                     {msg.text.split("\n").map((line, j) => (
                                         <span key={j}>
                                             {line}
+                                            {/* 最後の行以外の末尾に改行を入れる */}
                                             {j < msg.text.split("\n").length - 1 && <br />}
                                         </span>
                                     ))}
                                 </div>
 
-                                {/* ===== リボン装飾 =====
-                    画像がある場合: <img> で表示
-                    画像がない場合: 絵文字で表示
-                    どちらも ribbon-partner / ribbon-me クラスで位置を切り替え */}
+                                {/* ===== リボン装飾 ===== */}
+                                {/* ribbonImage がある → img で表示 */}
+                                {/* null → ribbonEmoji（絵文字）で表示 */}
                                 {ribbonImage ? (
                                     <img
                                         src={ribbonImage}
@@ -248,22 +282,20 @@ function Chat() {
                 })}
 
                 {/*
-          ===== 下部装飾画像 =====
-          最新メッセージの下に表示する装飾
-          画像を用意したら以下のコメントを解除して画像パスを指定する
+                    ===== 下部装飾画像 =====
+                    <img
+                        src={myGender === "boyfriend" ? "/deco/bottom-blue.png" : "/deco/bottom-pink.png"}
+                        alt=""
+                        className="chat-deco-bottom"
+                    />
+                */}
 
-          例:
-          <img
-            src={myGender === "boyfriend" ? "/deco/bottom-blue.png" : "/deco/bottom-pink.png"}
-            alt=""
-            className="chat-deco-bottom"
-          />
-        */}
-
+                {/* 最新メッセージへの自動スクロール用マーカー */}
                 <div ref={bottomRef} />
             </div>
 
             {/* ===== 入力バー ===== */}
+            {/* chat.css の .chat-input-bar で position: fixed → 画面下部に固定される */}
             <div className="chat-input-bar">
                 <input
                     className="chat-input"
@@ -273,19 +305,18 @@ function Chat() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 />
+                {/* 送信ボタン: react-icons の FiSend を使用 */}
                 <button
                     className="chat-send-btn"
                     onClick={handleSend}
                     disabled={!input.trim()}
                     aria-label="送信"
                 >
-                    <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
-                        <path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <FiSend size={18} color="white" strokeWidth={2} />
                 </button>
             </div>
 
+            {/* ===== タブバー ===== */}
             <TabBar />
         </div>
     );

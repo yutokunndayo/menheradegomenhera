@@ -1,67 +1,50 @@
-// src/pages/GeminiDemo.tsx
+import { useState } from 'react';
+// 波括弧 {} をつけて useGemini だけをインポートします
+import { useGemini } from '../components/api';
 
-import React, { useState } from 'react';
-import { useGemini } from '../components/api'; // パスは適宜変更してください
-
-const GeminiDemo: React.FC = () => {
+export default function Test() {
   const { generateChatResponse } = useGemini();
-  const [prompt, setPrompt] = useState('');
+  const [input, setInput] = useState('');
   const [response, setResponse] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!prompt.trim()) return;
-    setIsLoading(true);
-    setError('');
-    setResponse('');
-
+  const handleSend = async () => {
+    if (!input) return;
+    setLoading(true);
     try {
-      const result = await generateChatResponse(prompt);
+      // APIを呼び出して結果を受け取る
+      const result = await generateChatResponse(input);
       setResponse(result);
-    } catch (e) {
-      setError('エラーが発生しました。APIキーやネットワークを確認してください。');
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      setResponse("エラーが発生しました。コンソールを確認してください。");
     }
+    setLoading(false);
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-10 p-6 flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">🤖 Gemini 動作確認</h1>
+    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+      <h2>Gemini API テスト画面</h2>
+      
+      <div style={{ marginBottom: '10px' }}>
+        <input 
+          type="text" 
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="AIに話しかけてみてください"
+          style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+        />
+        <button 
+          onClick={handleSend} 
+          disabled={loading}
+          style={{ padding: '8px 16px' }}
+        >
+          {loading ? "送信中..." : "送信する"}
+        </button>
+      </div>
 
-      <textarea
-        className="border rounded-xl p-3 w-full h-32 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
-        placeholder="プロンプトを入力してください..."
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-      />
-
-      <button
-        className="bg-blue-500 hover:bg-blue-600 active:scale-95 text-white font-medium rounded-xl px-4 py-2 transition disabled:opacity-50"
-        onClick={handleSubmit}
-        disabled={isLoading || !prompt.trim()}
-      >
-        {isLoading ? '送信中...' : '送信'}
-      </button>
-
-      {/* 結果表示 */}
-      {response && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 whitespace-pre-wrap text-gray-800">
-          <p className="text-xs text-green-600 font-semibold mb-1">✅ レスポンス</p>
-          {response}
-        </div>
-      )}
-
-      {/* エラー表示 */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
-          <p className="text-xs font-semibold mb-1">❌ エラー</p>
-          {error}
-        </div>
-      )}
+      <div style={{ marginTop: '20px', padding: '10px', backgroundColor: '#f0f0f0', minHeight: '100px', whiteSpace: 'pre-wrap' }}>
+        {response || "ここにAIの返答が表示されます"}
+      </div>
     </div>
   );
-};
-
-export default GeminiDemo;
+}

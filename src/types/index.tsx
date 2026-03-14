@@ -2,7 +2,7 @@ export { default as Home } from '../pages/HomePage'
 export { default as Example } from '../pages/Example'
 export { default as Header } from '../components/Header'
 export { default as AuthCallback } from '../pages/AuthCallback'
-export { default as Account } from '../pages/Account'
+export { default as Account } from '../pages/account'
 export { default as Login } from '../pages/Login'
 export { default as Register } from '../pages/Register'
 export { default as AuthSelect } from '../pages/AuthSelect'
@@ -14,3 +14,4 @@ export { default as Setup } from '../pages/Setup'
 export { default as HomePageHeader } from '../components/HomePageHeader'
 export { default as LogoutModalPage } from "../pages/LogoutModalPage"
 export { default as SignupCallback } from "../pages/SignupCallback"
+export { default as Test } from '../pages/test'

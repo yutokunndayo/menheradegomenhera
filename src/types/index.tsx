@@ -21,8 +21,10 @@ export { default as LogoutModalPage } from "../pages/LogoutModalPage"
 export { default as SignupCallback } from "../pages/SignupCallback"
 export { default as Test } from '../pages/test'
 export { default as DeleteAccountModal } from "../pages/DeleteAccountModal"
-export { default as AlbumPage } from "../pages/AlbumPage"
 export { default as DiaryPage } from '../pages/DiaryPage'
 export { default as InvitePage } from '../pages/InvitePage'
 export { default as JoinPage } from '../pages/JoinPage'
 
+export { default as DiaryCalendar } from '../pages/DiaryCalendar'
+export { default as DiaryDetail } from '../pages/DiaryDetail'
+export { default as AlbumPage } from "../pages/AlbumPage"

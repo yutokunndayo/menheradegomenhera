@@ -20,6 +20,7 @@ import {
   EventList,
   LogoutModalPage,
   SignupCallback,
+  AlbumPage,
   Test, // types/index から読み込む test
   DiaryPage,
 } from './types/index';
@@ -52,6 +53,12 @@ function App() {
           <Route path='/account' element={<Account />} />
           <Route path='/example' element={<Example />} />
 
+            {/* 共有アルバム画面 */}
+            <Route path='/album' element={<AlbumPage />} />
+
+            {/* テスト画面群（お好みでどちらかにアクセスしてください） */}
+            <Route path='/test' element={<Test />} />
+            <Route path='/demo' element={<GeminiDemo />} />
           {/* ログアウトモーダル画面 */}
           <Route path='/logout' element={<LogoutModalPage />} />
 

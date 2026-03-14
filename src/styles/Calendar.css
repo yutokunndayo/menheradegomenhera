@@ -159,14 +159,16 @@
 .cal-day.today .cal-day-num {
     background: var(--cal-accent);
     color: white;
+    /* 常に白 — 土曜・日曜でも背景が水色/ピンクなので白が正解 */
     font-weight: 700;
 }
 
-.cal-day.sat .cal-day-num {
+/* 土曜・日曜の色（todayでない場合のみ） */
+.cal-day.sat:not(.today) .cal-day-num {
     color: var(--cal-sat);
 }
 
-.cal-day.sun .cal-day-num {
+.cal-day.sun:not(.today) .cal-day-num {
     color: var(--cal-sun);
 }
 
@@ -571,4 +573,133 @@
     padding-left: 20px;
     padding-right: 20px;
     padding-bottom: 8px;
+}
+
+/* ===== EventList ===== */
+
+.event-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: 12px;
+    background: var(--cal-white);
+    border-bottom: 1px solid var(--cal-border);
+}
+
+.event-list-back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--cal-accent);
+    display: flex;
+    align-items: center;
+    padding: 4px;
+}
+
+.event-list-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cal-text);
+    margin: 0;
+    flex: 1;
+    text-align: left;
+    padding-left: 4px;
+}
+
+/* 右上の + ボタン（丸いピンク） */
+.event-list-add-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--cal-accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: transform 0.15s;
+}
+
+.event-list-add-btn:active {
+    transform: scale(0.93);
+}
+
+.event-list-body {
+    padding: 16px 16px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.event-list-empty {
+    text-align: center;
+    color: var(--cal-text-sub);
+    font-size: 14px;
+    margin-top: 60px;
+}
+
+/* 予定カード */
+.event-list-item {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+/* 左の色ライン */
+.event-list-line {
+    width: 3px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    min-height: 40px;
+}
+
+.event-list-line.line-mine {
+    background: var(--cal-accent);
+}
+
+/* パートナーの予定は反対テーマの色 */
+.theme-boyfriend .event-list-line.line-pare {
+    background: #f5317f;
+}
+
+.theme-girlfriend .event-list-line.line-pare {
+    background: #4dd0e1;
+}
+
+.event-list-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+}
+
+.event-list-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cal-text);
+    margin: 0;
+}
+
+.event-list-memo {
+    font-size: 12px;
+    color: var(--cal-text-sub);
+    margin: 0;
+}
+
+/* 時刻（右側） */
+.event-list-times {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    font-size: 13px;
+    color: var(--cal-text-sub);
 }

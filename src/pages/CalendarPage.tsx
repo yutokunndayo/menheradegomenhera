@@ -160,7 +160,8 @@ function CalendarPage() {
                                 isToday ? "today" : "",
                                 dow === 5 ? "sat" : dow === 6 ? "sun" : "",
                             ].join(" ")}
-                            onClick={() => navigate(`/event?date=${toDateStr(d)}`)}
+                            // 日付タップ → その日の予定一覧画面へ
+                            onClick={() => navigate(`/event-list?date=${toDateStr(d)}`)}
                         >
                             <span className="cal-day-num">{d.getDate()}</span>
                             {!isOther && (

@@ -112,6 +112,34 @@ function formatDate(d: Date) {
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
 
+// ===== ダミー予定（編集モードの初期値読み込み用） =====
+const DUMMY_EVENTS_FOR_EDIT = [
+    {
+        taskid: "t1", name: "バイト",
+        date: new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12, 0).toISOString(),
+        duration: new Date(new Date().getFullYear(), new Date().getMonth(), 1, 18, 0).toISOString(),
+        isPare: false, memo: ""
+    },
+    {
+        taskid: "t2", name: "デート",
+        date: new Date(new Date().getFullYear(), new Date().getMonth(), 8, 14, 0).toISOString(),
+        duration: new Date(new Date().getFullYear(), new Date().getMonth(), 8, 20, 0).toISOString(),
+        isPare: true, memo: ""
+    },
+    {
+        taskid: "t3", name: "映画",
+        date: new Date(new Date().getFullYear(), new Date().getMonth(), 15, 18, 0).toISOString(),
+        duration: new Date(new Date().getFullYear(), new Date().getMonth(), 15, 21, 0).toISOString(),
+        isPare: true, memo: ""
+    },
+    {
+        taskid: "t4", name: "ジム",
+        date: new Date(new Date().getFullYear(), new Date().getMonth(), 22, 9, 0).toISOString(),
+        duration: new Date(new Date().getFullYear(), new Date().getMonth(), 22, 11, 0).toISOString(),
+        isPare: false, memo: ""
+    },
+];
+
 // ===== メイン =====
 function EventDetail() {
     const navigate = useNavigate();
@@ -119,6 +147,12 @@ function EventDetail() {
 
     const initDateStr = params.get("date") ?? new Date().toISOString().slice(0, 10);
     const initDate = new Date(initDateStr + "T12:00:00");
+
+    // URLに id があれば編集モード、なければ新規作成モード
+    const editTaskId = params.get("id");
+    const isEditMode = !!editTaskId;
+    // EventListから渡されるisPareの初期値
+    const initIsPare = params.get("isPare") === "true";
 
     const [myGender, setMyGender] = useState<MyGender>("boyfriend");
     const [myName, setMyName] = useState("自分");
@@ -133,14 +167,8 @@ function EventDetail() {
     const [endHour, setEndHour] = useState("13");
     const [endMin, setEndMin] = useState("00");
     const [memo, setMemo] = useState("");
+    const [isPare, setIsPare] = useState(initIsPare);
 
-    // ===== isPare: false=自分の予定 / true=パートナーの予定 =====
-    // 初期値は自分のgenderで決まる（彼氏なら自分=彼氏、彼女なら自分=彼女）
-    const [isPare, setIsPare] = useState(false);
-
-    // ===== 現在テーマ =====
-    // isPare=false → 自分のgenderテーマ
-    // isPare=true  → 相手のgenderテーマ（自分が彼氏なら彼女テーマ=ピンク、逆も然り）
     const currentTheme: MyGender = isPare
         ? (myGender === "boyfriend" ? "girlfriend" : "boyfriend")
         : myGender;
@@ -148,7 +176,7 @@ function EventDetail() {
     const [openPicker, setOpenPicker] = useState("none");
     const [saving, setSaving] = useState(false);
 
-    // ===== プロフィール取得 =====
+    // ===== プロフィール取得 + 編集モード時の既存予定読み込み =====
     useEffect(() => {
         const fetch = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -171,14 +199,41 @@ function EventDetail() {
                     .single();
                 if (partnerProfile?.name) setPartnerName(partnerProfile.name);
             }
+
+            // ===== 編集モード: 既存予定データをフォームに読み込む =====
+            if (isEditMode && editTaskId) {
+                // ダミーから検索（DB接続後は以下のSupabaseクエリに差し替える）
+                const existing = DUMMY_EVENTS_FOR_EDIT.find(e => e.taskid === editTaskId);
+
+                // ===== DB接続後はここを解除してダミーを削除する =====
+                // const { data: existing } = await supabase
+                //   .from("予定")
+                //   .select("*")
+                //   .eq("taskid", editTaskId)
+                //   .single();
+
+                if (existing) {
+                    const sd = new Date(existing.date);
+                    const ed = new Date(existing.duration);
+                    setTitle(existing.name);
+                    setStartDate(sd);
+                    setEndDate(ed);
+                    setStartHour(String(sd.getHours()).padStart(2, "0"));
+                    setStartMin(String(sd.getMinutes()).padStart(2, "0"));
+                    setEndHour(String(ed.getHours()).padStart(2, "0"));
+                    setEndMin(String(ed.getMinutes()).padStart(2, "0"));
+                    setIsPare(existing.isPare);
+                    if (existing.memo) setMemo(existing.memo);
+                }
+            }
         };
         fetch();
-    }, []);
+    }, [isEditMode, editTaskId]);
 
     const togglePicker = (name: string) =>
         setOpenPicker(prev => prev === name ? "none" : name);
 
-    // ===== 保存処理 =====
+    // ===== 保存処理（新規=insert / 編集=update） =====
     const handleSave = async () => {
         if (!title.trim()) return;
         setSaving(true);
@@ -191,16 +246,30 @@ function EventDetail() {
             const endDt = new Date(endDate);
             if (!allDay) endDt.setHours(parseInt(endHour), parseInt(endMin), 0, 0);
 
-            const { error } = await supabase.from("予定").insert({
-                id: user.id,
-                taskid: crypto.randomUUID(),
+            const payload = {
                 name: title.trim(),
-                createAt: new Date().toISOString(),
                 date: startDt.toISOString(),
                 duration: endDt.toISOString(),
                 isPare,
-            });
-            if (error) throw error;
+            };
+
+            if (isEditMode && editTaskId) {
+                // 編集モード: 既存レコードを更新
+                const { error } = await supabase
+                    .from("予定")
+                    .update(payload)
+                    .eq("taskid", editTaskId);
+                if (error) throw error;
+            } else {
+                // 新規作成モード: 新しいレコードを追加
+                const { error } = await supabase.from("予定").insert({
+                    id: user.id,
+                    taskid: crypto.randomUUID(),
+                    createAt: new Date().toISOString(),
+                    ...payload,
+                });
+                if (error) throw error;
+            }
 
             // 保存後はカレンダーへ戻る
             navigate("/calendar", { replace: true });

@@ -27,7 +27,6 @@ function Register() {
             setError(error.message);
         } else {
             setSuccess(true);
-            setTimeout(() => navigate("/setup", { replace: true }), 1500);
         }
     };
 

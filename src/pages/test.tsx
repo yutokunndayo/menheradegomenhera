@@ -1,8 +1,9 @@
 import { useState } from 'react';
-// 波括弧 {} をつけて useGemini だけをインポートします
-import { useGemini } from '../components/api';
+// GeminiProvider はそのまま、useGemini は {} で囲んでインポートします
+import GeminiProvider, { useGemini } from '../components/api';
 
-export default function Test() {
+// 中身のコンポーネント（現状のGeminiDemo）
+function GeminiDemo() {
   const { generateChatResponse } = useGemini();
   const [input, setInput] = useState('');
   const [response, setResponse] = useState('');
@@ -46,5 +47,14 @@ export default function Test() {
         {response || "ここにAIの返答が表示されます"}
       </div>
     </div>
+  );
+}
+
+// 外側から呼ぶときは、Providerで囲んだものをエクスポートする
+export default function TestPage() {
+  return (
+    <GeminiProvider>
+      <GeminiDemo />
+    </GeminiProvider>
   );
 }

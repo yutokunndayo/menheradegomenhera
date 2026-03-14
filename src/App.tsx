@@ -1,4 +1,8 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import  GeminiProvider  from './components/api';
+// ↓ GeminiDemo を直接読み込む場合はこちらを残します
+import GeminiDemo from './pages/test'; 
+
 import {
   Home,
   Example,
@@ -16,12 +20,13 @@ import {
   EventList,
   LogoutModalPage,
   SignupCallback,
-  DeleteAccountModal,
-} from './types/index'
+  Test, // types/index から読み込む test
+} from './types/index';
 
 function App() {
   return (
-    <>
+    // GeminiProvider でアプリ全体を囲みます
+
       <Router>
         <main>
           <Routes>
@@ -48,13 +53,15 @@ function App() {
             {/* ログアウトモーダル画面 */}
             <Route path='/logout' element={<LogoutModalPage />} />
 
-            {/* アカウント削除モーダル画面 */}
-            <Route path='/delete-account' element={<DeleteAccountModal />} />
+            {/* テスト画面群（お好みでどちらかにアクセスしてください） */}
+            <Route path='/test' element={<Test />} />
+            <Route path='/demo' element={<GeminiDemo />} />
+
           </Routes>
         </main>
       </Router>
-    </>
-  )
+
+  );
 }
 
 export default App;

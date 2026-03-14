@@ -23,6 +23,7 @@ import {
   AlbumPage,
   Test, // types/index から読み込む test
   DiaryPage,
+  AlbumNewCreate,
 } from './types/index';
 
 function App() {
@@ -65,6 +66,9 @@ function App() {
           {/* テスト画面群（お好みでどちらかにアクセスしてください） */}
           <Route path='/test' element={<Test />} />
           <Route path='/demo' element={<GeminiDemo />} />
+
+          {/* アルバムの新規作成画面 */}
+          <Route path="/album-new" element={<AlbumNewCreate />} />
 
         </Routes>
       </main>

@@ -100,8 +100,13 @@ function Chat() {
                 .single();
 
             if (!myProfile) return;
-            setMyGender((myProfile.gender as MyGender) ?? "boyfriend");
 
+            // gender は Setup.tsx で保存した "boyfriend" / "girlfriend" が入ってくる
+            // この1行でテーマ全体（自分・相手の両方のバブル色・装飾）が切り替わる
+            setMyGender(myProfile.gender === true ? "girlfriend" : "boyfriend");
+            // ── Step2: パートナーのプロフィールを取得 ──
+            // myProfile.partner が自分のDBに入っている相手のUUID
+            // そのUUIDで相手の name / avatar を取得する
             if (myProfile.partner) {
                 const { data: partnerProfile } = await supabase
                     .from("profiles")

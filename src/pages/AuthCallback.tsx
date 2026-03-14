@@ -55,7 +55,7 @@ function AuthCallback() {
           .eq("id", user.id)
           .single();
 
-        if (!profile?.gender) {
+        if (profile?.gender === null) {
           navigate("/setup", { replace: true });
         } else {
           navigate("/chat", { replace: true });

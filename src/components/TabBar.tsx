@@ -24,12 +24,13 @@ function NotchedLine() {
     return (
         <svg
             className="tabbar-top-line"
-            viewBox="0 0 400 20"
+            viewBox="0 0 400 28"
             preserveAspectRatio="none"
             xmlns="http://www.w3.org/2000/svg"
         >
+            {/* Y座標を1→8に上げることでラインが下に表示される */}
             <path
-                d="M 0,1 L 155,1 Q 168,1 176,13 A 24,24 0 0,0 224,13 Q 232,1 245,1 L 400,1"
+                d="M 0,8 L 155,8 Q 168,8 176,20 A 24,24 0 0,0 224,20 Q 232,8 245,8 L 400,8"
                 fill="none"
                 stroke="#f5317f"
                 strokeWidth="1.5"

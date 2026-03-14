@@ -2,7 +2,8 @@
 
 .tabbar-wrapper {
     position: fixed;
-    bottom: 0;
+    bottom: -8px;
+    /* 全体を少し下に下げる */
     left: 0;
     right: 0;
     z-index: 100;
@@ -10,14 +11,13 @@
 }
 
 /* ===== 窪み付きSVGライン ===== */
-/* タブバーの一番上に配置。中央ボタンの真上だけ内側に凹む */
 .tabbar-top-line {
     display: block;
     width: 100%;
-    height: 20px;
+    height: 28px;
+    /* 高さを増やしてラインを下に下げる */
     overflow: visible;
     margin-bottom: -1px;
-    /* tabbar本体との隙間をなくす */
 }
 
 /* ===== タブバー本体 ===== */
@@ -26,7 +26,8 @@
     align-items: center;
     justify-content: space-around;
     background: white;
-    padding: 6px 8px 24px;
+    padding: 4px 8px env(safe-area-inset-bottom, 12px);
+    /* 上下を削る */
     position: relative;
 }
 
@@ -61,8 +62,8 @@
     justify-content: center;
     box-shadow: 0 4px 16px rgba(245, 49, 127, 0.45);
     position: relative;
-    top: -20px;
-    /* SVGラインより上に浮き出す */
+    top: -24px;
+    /* ラインのY座標変更に合わせて調整 */
     flex-shrink: 0;
     transition: transform 0.15s, box-shadow 0.15s;
 }

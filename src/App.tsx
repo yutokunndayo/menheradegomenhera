@@ -11,6 +11,7 @@ import {
   ForgotPassword,
   Chat,
   Setup,
+  LogoutModalPage,
 } from './types/index'
 
 function App() {
@@ -47,6 +48,9 @@ function App() {
             <Route path='/home' element={<Home />} />
             <Route path='/account' element={<Account />} />
             <Route path='/example' element={<Example />} />
+
+            {/* ログアウトモーダル画面 */}
+            <Route path='/logout' element={<LogoutModalPage />} />
           </Routes>
         </main>
       </Router>

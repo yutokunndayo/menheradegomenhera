@@ -1,137 +1,101 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { FiEdit2, FiTrash2 } from "react-icons/fi"
-import { FaHeart } from "react-icons/fa"
 
 import AppHeader from "../components/AppHeader"
 import TabBar from "../components/TabBar"
 
-import "../styles/AlbumPage.css"
+import "../styles/AlbumNewCreate.css"
 
-type Album = {
-  id:number
-  name:string
-  image:string
-  author:string
-  icon:string
-  date:string
+// File オブジェクトも一緒に保持する
+type Photo = {
+  url: string   // プレビュー用 blob URL
+  file: File    // Supabase アップロード用
 }
 
-export default function AlbumPage(){
+export default function AlbumNewCreate() {
 
   const navigate = useNavigate()
 
-  const [albums,setAlbums] = useState<Album[]>([
-    {
-      id:1,
-      name:"初詣",
-      image:"https://placehold.jp/600x400.png",
-      author:"彼女ちゃん",
-      icon:"https://placehold.jp/40x40.png",
-      date:"2026年1月1日"
-    }
-  ])
+  const [photos, setPhotos] = useState<Photo[]>([])
 
 
-  const goCreate = ()=>{
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 
-    navigate("/album-new-create")
+    const files = Array.from(e.target.files || [])
 
-  }
+    const newPhotos = files.map((file) => ({
+      url: URL.createObjectURL(file),
+      file: file,  // File オブジェクトを保持
+    }))
 
+    setPhotos((prev) => [...prev, ...newPhotos])
 
-  const deleteAlbum = (id:number)=>{
-
-    const newList = albums.filter(a=>a.id!==id)
-
-    setAlbums(newList)
+    // 同じファイルを再選択できるようリセット
+    e.target.value = ""
 
   }
 
 
-  return(
+  const goNext = () => {
 
-    <div className="album-page">
+    if (photos.length === 0) return
+
+    navigate("/album-edit", {
+      state: { images: photos },
+    })
+
+  }
+
+
+  return (
+
+    <div className="album-new-page">
 
       <AppHeader
         variant="simple"
-        title=""
+        title="写真を選択"
       />
 
-
-      {/* 新規作成ボタン */}
-      <button
-        className="album-create-btn"
-        onClick={goCreate}
-      >
-
-        <FaHeart className="heart-icon"/>
-        <span className="plus-icon">+</span>
-
-      </button>
-
-
-      {/* アルバム一覧 */}
-      <div className="album-list">
-
-        {albums.map((album)=>(
-
-          <div key={album.id} className="album-item">
-
-            <div className="album-user">
-
-              <div className="album-user-left">
-
-                <img
-                  src={album.icon}
-                  className="album-user-icon"
-                />
-
-                <span className="album-user-name">
-                  {album.author}
-                </span>
-
-              </div>
-
-              <span className="album-date">
-                {album.date}
-              </span>
-
-            </div>
-
-
-            <img
-              src={album.image}
-              className="album-image"
-            />
-
-
-            <div className="album-bottom">
-
-              <span className="album-title">
-                {album.name}
-              </span>
-
-              <div className="album-actions">
-
-                <FiEdit2 className="album-icon-btn"/>
-
-                <FiTrash2
-                  className="album-icon-btn"
-                  onClick={()=>deleteAlbum(album.id)}
-                />
-
-              </div>
-
-            </div>
-
-          </div>
-
-        ))}
-
+      <div className="photo-count">
+        {photos.length}枚選択中
       </div>
 
-      <TabBar/>
+      <div className="select-area">
+        <label className="select-button">
+          写真を追加
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileChange}
+          />
+        </label>
+      </div>
+
+      <div className="photo-grid">
+        {photos.map((photo, index) => (
+          <div key={index} className="photo-wrapper">
+            <img
+              src={photo.url}
+              className="photo-item"
+            />
+            <span className="photo-number">
+              {index + 1}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {photos.length > 0 && (
+        <button
+          className="next-button"
+          onClick={goNext}
+        >
+          次へ →
+        </button>
+      )}
+
+      <TabBar />
 
     </div>
 

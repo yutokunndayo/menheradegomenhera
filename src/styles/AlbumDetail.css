@@ -1,0 +1,101 @@
+/* ===== ページ全体 ===== */
+.album-detail-page {
+  min-height: 100vh;
+  background: #f7f7f7;
+  padding-bottom: 100px;
+}
+
+
+/* ===== ヘッダー情報エリア ===== */
+.detail-header {
+  background: white;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.detail-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.detail-user-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.detail-user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.detail-date {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.detail-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+  margin: 0;
+}
+
+
+/* ===== 写真グリッド ===== */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  padding: 0;
+}
+
+.detail-photo {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+}
+
+.detail-photo:hover {
+  opacity: 0.85;
+}
+
+
+/* ===== 戻るボタン ===== */
+.back-button {
+  display: block;
+  margin: 20px auto;
+  padding: 12px 24px;
+
+  background: white;
+  color: #ff8fa3;
+
+  border: 2px solid #ff8fa3;
+  border-radius: 24px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: #ff8fa3;
+  color: white;
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { FiEdit2, FiTrash2 } from "react-icons/fi"
 import { FaHeart } from "react-icons/fa"
@@ -8,61 +8,87 @@ import TabBar from "../components/TabBar"
 
 import "../styles/AlbumPage.css"
 
-type Album = {
-  id:number
-  name:string
-  image:string
-  author:string
-  icon:string
-  date:string
+type Photo = {
+  url: string
 }
 
-export default function AlbumPage(){
+type Album = {
+  id: number
+  name: string
+  image: string
+  images: Photo[]
+  author: string
+  icon: string
+  date: string
+}
+
+export default function AlbumPage() {
 
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [albums,setAlbums] = useState<Album[]>([
+  const [albums, setAlbums] = useState<Album[]>([
     {
-      id:1,
-      name:"初詣",
-      image:"https://placehold.jp/600x400.png",
-      author:"彼女ちゃん",
-      icon:"https://placehold.jp/40x40.png",
-      date:"2026年1月1日"
-    }
+      id: 1,
+      name: "初詣",
+      image: "https://placehold.jp/600x400.png",
+      images: [{ url: "https://placehold.jp/600x400.png" }],
+      author: "彼女ちゃん",
+      icon: "https://placehold.jp/40x40.png",
+      date: "2026年1月1日",
+    },
   ])
 
 
-  // ===== AlbumEditから戻ってきたアルバムを追加 =====
-  useEffect(()=>{
+  // 処理済みのアルバム id を記録して二重追加を防ぐ
+  const addedIdRef = useRef<number | null>(null)
 
-    if(location.state?.newAlbum){
+  useEffect(() => {
 
-      setAlbums((prev)=>[location.state.newAlbum,...prev])
+    const newAlbum = location.state?.newAlbum
+
+    if (newAlbum && newAlbum.id !== addedIdRef.current) {
+
+      addedIdRef.current = newAlbum.id
+
+      setAlbums((prev) => [newAlbum, ...prev])
+
+      // location.state をクリアして再レンダリング時の再追加を防ぐ
+      window.history.replaceState({}, "")
 
     }
 
-  },[location.state])
+  }, [location.state])
 
 
-  const goCreate = ()=>{
+  const goCreate = () => {
 
     navigate("/album-new-create")
 
   }
 
 
-  const deleteAlbum = (id:number)=>{
+  const goDetail = (album: Album) => {
 
-    const newList = albums.filter(a=>a.id!==id)
+    navigate("/album-detail", {
+      state: { album },
+    })
+
+  }
+
+
+  const deleteAlbum = (e: React.MouseEvent, id: number) => {
+
+    e.stopPropagation() // アルバム詳細への遷移を防ぐ
+
+    const newList = albums.filter((a) => a.id !== id)
 
     setAlbums(newList)
 
   }
 
 
-  return(
+  return (
 
     <div className="album-page">
 
@@ -77,19 +103,21 @@ export default function AlbumPage(){
         className="album-create-btn"
         onClick={goCreate}
       >
-
-        <FaHeart className="heart-icon"/>
+        <FaHeart className="heart-icon" />
         <span className="plus-icon">+</span>
-
       </button>
 
 
       {/* アルバム一覧 */}
       <div className="album-list">
 
-        {albums.map((album)=>(
+        {albums.map((album) => (
 
-          <div key={album.id} className="album-item">
+          <div
+            key={album.id}
+            className="album-item"
+            onClick={() => goDetail(album)}
+          >
 
             <div className="album-user">
 
@@ -127,11 +155,14 @@ export default function AlbumPage(){
 
               <div className="album-actions">
 
-                <FiEdit2 className="album-icon-btn"/>
+                <FiEdit2
+                  className="album-icon-btn"
+                  onClick={(e) => e.stopPropagation()}
+                />
 
                 <FiTrash2
                   className="album-icon-btn"
-                  onClick={()=>deleteAlbum(album.id)}
+                  onClick={(e) => deleteAlbum(e, album.id)}
                 />
 
               </div>
@@ -144,7 +175,7 @@ export default function AlbumPage(){
 
       </div>
 
-      <TabBar/>
+      <TabBar />
 
     </div>
 

@@ -24,6 +24,8 @@ import {
   Test, // types/index から読み込む test
   DiaryPage,
   AlbumNewCreate,
+  AlbumEdit,
+  AlbumDetail,
 } from './types/index';
 
 function App() {
@@ -68,7 +70,12 @@ function App() {
           <Route path='/demo' element={<GeminiDemo />} />
 
           {/* アルバムの新規作成画面 */}
-          <Route path="/album-new" element={<AlbumNewCreate />} />
+          <Route path="/album-new-create" element={<AlbumNewCreate />} />
+
+          <Route path="/album-edit" element={<AlbumEdit />} />
+
+          {/* アルバム詳細画面 */}
+          <Route path='/album-detail' element={<AlbumDetail />} />
 
         </Routes>
       </main>

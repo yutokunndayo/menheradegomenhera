@@ -23,3 +23,5 @@ export { default as DeleteAccountModal } from "../pages/DeleteAccountModal"
 export { default as AlbumPage } from "../pages/AlbumPage"
 export { default as DiaryPage } from '../pages/DiaryPage'
 export { default as AlbumNewCreate } from "../pages/AlbumNewCreate"
+export { default as AlbumEdit } from "../pages/AlbumEdit"
+export { default as AlbumDetail } from "../pages/AlbumDetail"  // 追加

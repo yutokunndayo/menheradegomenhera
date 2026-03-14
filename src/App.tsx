@@ -22,6 +22,8 @@ import {
   SignupCallback,
   Test, // types/index から読み込む test
   DiaryPage,
+  DiaryCalendar,
+  DiaryDetail,
 } from './types/index';
 
 function App() {
@@ -48,6 +50,8 @@ function App() {
           <Route path='/event-list' element={<EventList />} />
           <Route path='/event' element={<EventDetail />} />
           <Route path='/diary' element={<DiaryPage />} />
+          <Route path='/diary-calendar' element={<DiaryCalendar />} />
+          <Route path='/diary-detail' element={<DiaryDetail />} />
           <Route path='/home' element={<Home />} />
           <Route path='/account' element={<Account />} />
           <Route path='/example' element={<Example />} />

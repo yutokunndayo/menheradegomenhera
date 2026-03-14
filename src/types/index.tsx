@@ -21,3 +21,5 @@ export { default as SignupCallback } from "../pages/SignupCallback"
 export { default as Test } from '../pages/test'
 export { default as DeleteAccountModal } from "../pages/DeleteAccountModal"
 export { default as DiaryPage } from '../pages/DiaryPage'
+export { default as DiaryCalendar } from '../pages/DiaryCalendar'
+export { default as DiaryDetail } from '../pages/DiaryDetail'

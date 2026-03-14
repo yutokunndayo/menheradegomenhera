@@ -1,0 +1,91 @@
+/* ===== ページ全体 ===== */
+.album-edit-page{
+  min-height:100vh;
+  background:#f7f7f7;
+  padding-bottom:80px;
+}
+
+
+/* ===== タイトル入力 ===== */
+.album-title-input{
+  padding:20px;
+}
+
+.album-title-input input{
+
+  width:100%;
+  padding:12px 14px;
+
+  border-radius:10px;
+  border:1px solid #ddd;
+
+  font-size:16px;
+
+  outline:none;
+}
+
+.album-title-input input:focus{
+  border-color:#ff8fa3;
+  box-shadow:0 0 0 2px rgba(255,143,163,0.2);
+}
+
+
+/* ===== 写真プレビュー ===== */
+.album-preview{
+
+  display:grid;
+
+  grid-template-columns:repeat(3,1fr);
+
+  gap:10px;
+
+  padding:0 16px 20px;
+}
+
+
+/* 写真 */
+.preview-image{
+
+  width:100%;
+  aspect-ratio:1/1;
+
+  object-fit:cover;
+
+  border-radius:10px;
+
+  box-shadow:0 3px 8px rgba(0,0,0,0.08);
+}
+
+
+/* ===== 作成ボタン ===== */
+.create-album-button{
+
+  position:fixed;
+  bottom:90px;
+  left:50%;
+
+  transform:translateX(-50%);
+
+  width:90%;
+  max-width:400px;
+
+  padding:14px;
+
+  border:none;
+  border-radius:14px;
+
+  background:#ff8fa3;
+  color:white;
+
+  font-size:16px;
+  font-weight:bold;
+
+  cursor:pointer;
+
+  box-shadow:0 6px 14px rgba(0,0,0,0.15);
+}
+
+
+.create-album-button:hover{
+  background:#ff7b91;
+}

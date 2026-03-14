@@ -1,0 +1,65 @@
+.account-page {
+  min-height: 100vh;
+  background: #f3f4f6;
+  text-align: center;
+}
+
+.account-content {
+  margin-top: 20px;
+}
+
+/* アイコンエリア */
+
+.account-icon-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.account-icon {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 4px solid #ec4899;
+  object-fit: cover;
+}
+
+.change-image-btn {
+  margin-top: 10px;
+  background: #ddd;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.hidden-input {
+  display: none;
+}
+
+/* アカウント情報 */
+
+.account-list {
+  margin-top: 30px;
+  background: white;
+  border-top: 1px solid #ddd;
+}
+
+.account-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+.label {
+  color: #555;
+}
+
+.value {
+  color: #444;
+}
+
+.clickable {
+  cursor: pointer;
+}

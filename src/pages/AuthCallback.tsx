@@ -29,15 +29,23 @@ function AuthCallback() {
           return;
         }
 
+        // const { error: upsertError } = await supabase.from("profiles").upsert({
+        //   id: user.id,
+        //   mail: user.email,
+        // }, {
+        //   // nameやgenderがすでにある場合は上書きしない
+        //   onConflict: "id",
+        //   ignoreDuplicates: true,
+        // });
+
+        // if (upsertError) throw upsertError;
+
         const { error: upsertError } = await supabase.from("profiles").upsert({
           id: user.id,
-          mail: user.email,
         }, {
-          // nameやgenderがすでにある場合は上書きしない
           onConflict: "id",
           ignoreDuplicates: true,
         });
-
         if (upsertError) throw upsertError;
 
         // profilesのgenderが未設定（初回）ならSetupへ、設定済みならchatへ

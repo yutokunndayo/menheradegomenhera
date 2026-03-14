@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi"
 import { FaHeart } from "react-icons/fa"
+import { useNavigate } from "react-router-dom"
 
 import AppHeader from "../components/AppHeader"
 import TabBar from "../components/TabBar"
@@ -17,6 +18,8 @@ type Album = {
 }
 
 export default function AlbumPage() {
+
+  const navigate = useNavigate()
 
   const [albums, setAlbums] = useState<Album[]>([
     {
@@ -54,9 +57,12 @@ export default function AlbumPage() {
       />
 
       {/* 新規作成ボタン */}
-      <button className="album-create-btn" onClick={createAlbum}>
-        <FaHeart className="heart-icon"/>
-        <FiPlus className="plus-icon"/>
+      <button
+        className="album-create-btn"
+        onClick={() => navigate("/album-new")}
+      >
+        <FaHeart className="heart-icon" />
+        <FiPlus className="plus-icon" />
       </button>
 
 

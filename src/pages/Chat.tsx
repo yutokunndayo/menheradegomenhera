@@ -67,6 +67,7 @@ const dummyMessages: Message[] = [
     { id: "8", sender: "partner", text: "そういうところほんと無理", time: "10:11" },
 ];
 
+
 function Chat() {
     const [messages, setMessages] = useState<Message[]>(dummyMessages);
     const [input, setInput] = useState("");
@@ -143,27 +144,62 @@ function Chat() {
         fetchProfile();
     }, []);
 
+    // // ===== メッセージ送信処理 =====
+    // const handleSend = () => {
+    //     const text = input.trim();
+    //     if (!text) return;
+
+    //     // 新しいメッセージオブジェクトを作って末尾に追加する
+    //     // TODO: DBのメッセージストレージテーブルへの保存も追加する
+    //     //   supabase.from("messages").insert({
+    //     //     id: user.id,          // 送信者のid
+    //     //     message: text,        // 内容
+    //     //     sendAt: new Date(),   // 送った時間
+    //     //     isMemory: false,      // チャット（一言日記ではない）
+    //     //   })
+    //     const newMsg: Message = {
+    //         id: Date.now().toString(),
+    //         sender: "me",
+    //         text,
+    //         time: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
+    //     };
+    //     setMessages((prev) => [...prev, newMsg]);
+    //     setInput("");
+    // };
     // ===== メッセージ送信処理 =====
-    const handleSend = () => {
+    const handleSend = async () => { // ← ① async を追加する
         const text = input.trim();
         if (!text) return;
 
-        // 新しいメッセージオブジェクトを作って末尾に追加する
-        // TODO: DBのメッセージストレージテーブルへの保存も追加する
-        //   supabase.from("messages").insert({
-        //     id: user.id,          // 送信者のid
-        //     message: text,        // 内容
-        //     sendAt: new Date(),   // 送った時間
-        //     isMemory: false,      // チャット（一言日記ではない）
-        //   })
+        // ② ログイン中のユーザー情報を取得する
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.error("ユーザーがログインしていません");
+            return;
+        }
+
+        // 新しいメッセージオブジェクトを作って末尾に追加する（画面表示用）
         const newMsg: Message = {
             id: Date.now().toString(),
             sender: "me",
             text,
             time: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
         };
+        
+        // 画面に即座に反映して、入力欄を空にする
         setMessages((prev) => [...prev, newMsg]);
         setInput("");
+
+        // ③ DB（Supabase）の messages テーブルに保存する
+        const { error } = await supabase.from("messages").insert({
+            text: text,
+            sender: user.id,    // 送信者のid（user.id）
+            is_memory: false    // チャットなのでfalse
+        });
+
+        if (error) {
+            console.error("メッセージ保存エラー:", error.message);
+        }
     };
 
     return (

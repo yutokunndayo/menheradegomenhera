@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import AuthHeader from "../components/AuthHeader";
 import "../styles/login.css";
 
 function ForgotPassword() {
@@ -26,24 +27,7 @@ function ForgotPassword() {
 
     return (
         <div className="auth-wrapper">
-            {/* スカラップヘッダー + ロゴ */}
-            <div className="scallop-header">
-                {/* 戻るボタン */}
-                <button className="back-btn" onClick={() => navigate("/login")}>
-                    <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M11 4L6 9L11 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    戻る
-                </button>
-
-                <div className="auth-logo">
-                    {/* アイコンプレースホルダー: 後でimgタグに差し替え */}
-                    <div className="logo-icon-placeholder" aria-label="アプリアイコン">
-                        <span className="logo-icon-text">♡</span>
-                    </div>
-                    <p className="logo-appname">FamLink</p>
-                </div>
-            </div>
+            <AuthHeader backTo="/login" />
 
             <div className="auth-container">
                 {sent ? (

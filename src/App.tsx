@@ -12,6 +12,7 @@ import {
   Chat,
   Setup,
   LogoutModalPage,
+  SignupCallback,
 } from './types/index'
 
 function App() {
@@ -40,6 +41,9 @@ function App() {
 
             {/* OAuth コールバック → チャット画面へ */}
             <Route path='/authCallback' element={<AuthCallback />} />
+            
+            {/* OAuth コールバック → チャット画面へ */}
+            <Route path='/signup-callback' element={<SignupCallback />} />
 
             {/* チャット画面（ログイン後のメイン画面） */}
             <Route path='/chat' element={<Chat />} />

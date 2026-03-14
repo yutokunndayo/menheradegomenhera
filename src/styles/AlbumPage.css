@@ -85,6 +85,9 @@
 /* メイン画像 */
 .album-image{
   width:100%;
+  aspect-ratio:16/9;
+  object-fit:cover;
+
   border-radius:10px;
   margin-bottom:10px;
 }

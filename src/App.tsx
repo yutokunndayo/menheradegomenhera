@@ -11,6 +11,8 @@ import {
   ForgotPassword,
   Chat,
   Setup,
+  CalendarPage,
+  EventDetail,
 } from './types/index'
 
 function App() {
@@ -42,6 +44,12 @@ function App() {
 
             {/* チャット画面（ログイン後のメイン画面） */}
             <Route path='/chat' element={<Chat />} />
+
+            {/* カレンダー画面（タブバーでカレンダーを押した時のカレンダー画面） */}
+            <Route path='/calendar' element={<CalendarPage />} />
+
+            {/* 予定詳細、編集画面（タブバーでカレンダーを押した時のカレンダー画面） */}
+            <Route path='/event' element={<EventDetail />} />
 
             {/* その他のログイン後の画面 */}
             <Route path='/home' element={<Home />} />

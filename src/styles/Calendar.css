@@ -1,0 +1,574 @@
+/* ===== calendar.css ===== */
+
+/*
+  ===== テーマの仕組み =====
+  自分が彼氏 → --cal-accent: 水色系
+  自分が彼女 → --cal-accent: ピンク系
+  CalendarPage.tsx / EventDetail.tsx で myGender を取得して
+  <div className={`cal-wrapper theme-${myGender}`}> のように当てる
+*/
+
+/* ===== 彼氏テーマ（水色） ===== */
+.theme-boyfriend {
+    --cal-accent: #4dd0e1;
+    --cal-accent-dark: #0097a7;
+    --cal-accent-pale: #e0f7fa;
+    --cal-accent-bg: #f5fdfe;
+    --cal-toggle-on: #4dd0e1;
+    --cal-date-bg: #e0f7fa;
+    --cal-sat: #4dd0e1;
+    --cal-sun: #ef5350;
+}
+
+/* ===== 彼女テーマ（ピンク） ===== */
+.theme-girlfriend {
+    --cal-accent: #f5317f;
+    --cal-accent-dark: #d41f6a;
+    --cal-accent-pale: #fce4ec;
+    --cal-accent-bg: #fff5f8;
+    --cal-toggle-on: #f5317f;
+    --cal-date-bg: #fce4ec;
+    --cal-sat: #f5317f;
+    --cal-sun: #ef5350;
+}
+
+/* ===== 共通変数（テーマ非依存） ===== */
+:root {
+    --cal-white: #ffffff;
+    --cal-bg: #f7f7f7;
+    --cal-text: #333333;
+    --cal-text-sub: #aaaaaa;
+    --cal-border: #eeeeee;
+    --cal-separator: #e8e8e8;
+}
+
+/* ===== ラッパー ===== */
+.cal-wrapper {
+    min-height: 100dvh;
+    background: var(--cal-white);
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    /* カレンダー全体がスクロール可能に */
+}
+
+/* ===== ヘッダー ===== */
+.cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 52px 20px 12px;
+    background: var(--cal-white);
+    border-bottom: 1px solid var(--cal-border);
+}
+
+.cal-header-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--cal-text);
+    margin: 0;
+}
+
+.cal-header-btn {
+    background: none;
+    border: none;
+    font-size: 15px;
+    cursor: pointer;
+    padding: 4px 0;
+    color: var(--cal-accent);
+    font-weight: 500;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+/* ===== カレンダー月表示 ===== */
+.cal-month-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--cal-text);
+    min-width: 120px;
+    text-align: center;
+    margin: 0;
+}
+
+.cal-month-nav {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--cal-accent);
+    display: flex;
+    align-items: center;
+    padding: 4px;
+}
+
+/* 曜日ヘッダー */
+.cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 0 8px;
+    border-bottom: 1px solid var(--cal-border);
+}
+
+.cal-weekday {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--cal-text-sub);
+    padding: 6px 0;
+}
+
+.cal-weekday.sat {
+    color: var(--cal-sat);
+}
+
+.cal-weekday.sun {
+    color: var(--cal-sun);
+}
+
+/* 日付グリッド */
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 4px 8px 100px;
+    /* タブバー分の余白を下に確保 */
+    flex: 1;
+}
+
+.cal-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 2px;
+    cursor: pointer;
+    min-height: 60px;
+    gap: 2px;
+}
+
+.cal-day-num {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--cal-text);
+    font-weight: 400;
+}
+
+.cal-day.today .cal-day-num {
+    background: var(--cal-accent);
+    color: white;
+    font-weight: 700;
+}
+
+.cal-day.sat .cal-day-num {
+    color: var(--cal-sat);
+}
+
+.cal-day.sun .cal-day-num {
+    color: var(--cal-sun);
+}
+
+.cal-day.other-month .cal-day-num {
+    color: #dddddd;
+}
+
+/* イベントバッジ */
+.cal-event-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    padding: 0 2px;
+}
+
+.cal-event-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: var(--cal-accent);
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+
+/* ===== EventDetail ===== */
+.event-wrapper {
+    min-height: 100dvh;
+    background: var(--cal-white);
+    /* グレー背景をなくして白に統一 */
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ヘッダー（キャンセル・保存） */
+/* padding-top に safe-area を使うことで
+   iPhoneのノッチ・ダイナミックアイランド・通常端末どれでも正しく表示される */
+.event-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 12px;
+    background: var(--cal-white);
+}
+
+.event-cancel-btn {
+    background: none;
+    border: none;
+    font-size: 15px;
+    color: var(--cal-accent);
+    cursor: pointer;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+.event-save-btn {
+    background: none;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cal-accent);
+    cursor: pointer;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+/* タイトル入力 */
+.event-title-input {
+    width: 100%;
+    font-size: 22px;
+    font-weight: 600;
+    border: none;
+    border-bottom: 1px solid var(--cal-separator);
+    background: var(--cal-white);
+    padding: 14px 20px;
+    outline: none;
+    color: var(--cal-text);
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    box-sizing: border-box;
+}
+
+/* セクションカード — marginをなくしてボーダーだけで区切る */
+.event-card {
+    background: var(--cal-white);
+    margin: 0;
+    /* ← 隙間をなくす */
+    border-top: 1px solid var(--cal-separator);
+    border-bottom: none;
+    /* 次のevent-cardのborder-topと重複しないよう削除 */
+}
+
+/* 各行 */
+.event-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--cal-separator);
+    cursor: pointer;
+    background: var(--cal-white);
+}
+
+.event-row:last-child {
+    border-bottom: none;
+}
+
+.event-row-icon {
+    color: var(--cal-accent);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.event-row-label {
+    font-size: 15px;
+    color: var(--cal-text);
+    flex: 1;
+}
+
+.event-row-value {
+    font-size: 15px;
+    color: var(--cal-text-sub);
+}
+
+/* 終日トグル行 */
+.event-allday-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--cal-separator);
+    background: var(--cal-white);
+}
+
+/* トグルスイッチ */
+.toggle-track {
+    width: 48px;
+    height: 28px;
+    border-radius: 14px;
+    background: #dddddd;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+    border: none;
+    padding: 0;
+}
+
+.toggle-track.on {
+    background: var(--cal-toggle-on);
+}
+
+.toggle-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+
+.toggle-track.on .toggle-thumb {
+    transform: translateX(20px);
+}
+
+/* 日付行のハイライト */
+.event-date-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 20px;
+    background: var(--cal-white);
+    cursor: pointer;
+}
+
+/* 開始日行だけ下にボーダー（画像③通り） */
+.event-date-row--bordered {
+    border-bottom: 1px solid var(--cal-separator);
+}
+
+.event-date-label {
+    font-size: 15px;
+    color: var(--cal-accent);
+    background: var(--cal-date-bg);
+    padding: 4px 12px;
+    border-radius: 8px;
+}
+
+.event-time-label {
+    font-size: 15px;
+    color: var(--cal-text);
+}
+
+/* ===== 展開パネル（日付ピッカー・時間ピッカー） ===== */
+.event-picker-panel {
+    background: var(--cal-bg);
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+/* 月カレンダーピッカー */
+.mini-cal {
+    padding: 8px 16px 16px;
+}
+
+.mini-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.mini-cal-weekday {
+    text-align: center;
+    font-size: 11px;
+    color: var(--cal-text-sub);
+    padding: 4px 0;
+    font-weight: 600;
+}
+
+.mini-cal-day {
+    text-align: center;
+    font-size: 13px;
+    padding: 6px 2px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--cal-text);
+    border: none;
+    background: none;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+}
+
+.mini-cal-day.selected {
+    background: var(--cal-accent);
+    color: white;
+    font-weight: 700;
+}
+
+.mini-cal-day.today-dot {
+    color: var(--cal-accent);
+    font-weight: 700;
+}
+
+.mini-cal-day.other {
+    color: #dddddd;
+}
+
+.mini-cal-day.sat {
+    color: var(--cal-sat);
+}
+
+.mini-cal-day.sun {
+    color: var(--cal-sun);
+}
+
+.mini-cal-day.selected.sat,
+.mini-cal-day.selected.sun {
+    color: white;
+}
+
+/* 時間ドラムロール */
+.time-drum {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    padding: 8px 0 16px;
+    user-select: none;
+}
+
+.drum-col {
+    width: 80px;
+    height: 200px;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.drum-col::-webkit-scrollbar {
+    display: none;
+}
+
+.drum-item {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--cal-text-sub);
+    scroll-snap-align: center;
+    cursor: pointer;
+    transition: color 0.15s, font-size 0.15s;
+}
+
+.drum-item.active {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--cal-text);
+}
+
+/* ドラムの選択ハイライト帯 */
+.drum-highlight {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(50% - 20px);
+    height: 40px;
+    background: var(--cal-bg);
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+/* パートナーチップ */
+.event-partner-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--cal-accent-pale);
+    color: var(--cal-accent);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* メモ入力 */
+.event-memo-input {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 15px;
+    color: var(--cal-text);
+    outline: none;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+.event-memo-input::placeholder {
+    color: var(--cal-text-sub);
+}
+
+/* ===== 削除ボタン ===== */
+.event-delete-area {
+    margin-top: 32px;
+    display: flex;
+    justify-content: center;
+    padding-bottom: 40px;
+}
+
+.event-delete-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1.5px solid #ef5350;
+    color: #ef5350;
+    border-radius: 10px;
+    padding: 12px 32px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    transition: background 0.2s;
+}
+
+.event-delete-btn:hover {
+    background: #fff5f5;
+}
+
+/* ===== イベントバッジ（自分/パートナー色分け） ===== */
+/* badge-mine: アクセントカラー（自分のgenderテーマ） */
+.cal-event-badge.badge-mine {
+    background: var(--cal-accent);
+    opacity: 0.85;
+}
+
+/* badge-pare: 薄め（パートナーの予定は区別しやすくする） */
+.cal-event-badge.badge-pare {
+    background: var(--cal-accent);
+    opacity: 0.5;
+}
+
+/* ===== カレンダー月ヘッダーのsafe-area対応 ===== */
+.cal-month-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 8px;
+}

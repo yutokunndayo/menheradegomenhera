@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { PiGenderFemaleBold, PiGenderMaleBold } from "react-icons/pi";
 import "../styles/login.css";
 import "../styles/setup.css";
 
@@ -183,14 +184,20 @@ function Setup() {
                                 className={`setup-gender-btn ${gender === "girlfriend" ? "selected" : ""}`}
                                 onClick={() => setGender("girlfriend")}
                             >
-                                <span className="setup-gender-emoji">👧</span>
+                                <PiGenderFemaleBold
+                                    size={36}
+                                    color={gender === "girlfriend" ? "#f5317f" : "#cccccc"}
+                                />
                                 <span>彼女</span>
                             </button>
                             <button
                                 className={`setup-gender-btn ${gender === "boyfriend" ? "selected" : ""}`}
                                 onClick={() => setGender("boyfriend")}
                             >
-                                <span className="setup-gender-emoji">👦</span>
+                                <PiGenderMaleBold
+                                    size={36}
+                                    color={gender === "boyfriend" ? "#f5317f" : "#cccccc"}
+                                />
                                 <span>彼氏</span>
                             </button>
                         </div>

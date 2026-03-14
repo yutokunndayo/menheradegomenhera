@@ -1,16 +1,15 @@
-/* ===== ページ全体 ===== */
+/* ページ全体 */
 .album-detail-page {
   min-height: 100vh;
   background: #f7f7f7;
   padding-bottom: 100px;
 }
 
-
-/* ===== ヘッダー情報エリア ===== */
+/* ヘッダー情報エリア */
 .detail-header {
   background: white;
   padding: 16px 20px;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
@@ -26,6 +25,7 @@
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
 .detail-user-info {
@@ -50,15 +50,14 @@
   font-weight: 700;
   color: #222;
   margin: 0;
+  word-break: break-all;
 }
 
-
-/* ===== 写真グリッド ===== */
+/* 写真グリッド */
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 3px;
-  padding: 0;
 }
 
 .detail-photo {
@@ -74,12 +73,11 @@
   opacity: 0.85;
 }
 
-
-/* ===== 戻るボタン ===== */
+/* 戻るボタン */
 .back-button {
   display: block;
-  margin: 20px auto;
-  padding: 12px 24px;
+  margin: 24px auto;
+  padding: 12px 28px;
 
   background: white;
   color: #ff8fa3;
@@ -91,11 +89,37 @@
   font-weight: 600;
 
   cursor: pointer;
-
   transition: all 0.2s ease;
 }
 
 .back-button:hover {
   background: #ff8fa3;
   color: white;
+}
+
+/* ===== レスポンシブ ===== */
+@media (max-width: 480px) {
+  .detail-header {
+    padding: 12px 16px;
+  }
+
+  .detail-title {
+    font-size: 17px;
+  }
+
+  .detail-grid {
+    gap: 2px;
+  }
+
+  .back-button {
+    width: calc(100% - 32px);
+    margin: 20px 16px;
+    text-align: center;
+  }
+}
+
+@media (min-width: 601px) {
+  .detail-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }

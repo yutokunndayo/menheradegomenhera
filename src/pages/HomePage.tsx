@@ -1,16 +1,123 @@
-import { useNavigate } from 'react-router-dom';
+// Reactのstate（状態管理）を使うため
+import { useState } from "react"
+
+// ページ遷移をするためのフック
+import { useNavigate } from "react-router-dom"
+
+// 画像ファイルの読み込み
+import header from "../assets/header.png"
+import decor from "../assets/decor.png"
+import accountIcon from "../assets/registration-information.png"
+import logoutIcon from "../assets/logout.png"
+import deleteIcon from "../assets/account-delete.png"
+
+// CSSファイルの読み込み
+import "../styles/HomePage.css"
 
 
+// ホーム画面コンポーネント
 export default function HomePage() {
-    const navigate = useNavigate();
-    const ClickHandler = () => {
-        navigate('/example');
-    }
-    // tailwindcssは適当につけてるから参考にしないで
-    return (
 
-        <div className="bg-red-500 text-white p-6 rounded-lg" onClick={ClickHandler}>
-            ここをクリックしてExampleページに移動
+  // ページ遷移に使う関数
+  const navigate = useNavigate()
+
+  // プロフィールアイコンの画像URLを保存するstate
+  const [icon, setIcon] = useState<string | null>(null)
+
+
+  // アイコン画像を選択したときの処理
+  const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+    // 選択されたファイルを取得
+    const file = e.target.files?.[0]
+
+    // ファイルが存在する場合
+    if (file) {
+
+      // 選択された画像を表示するためのURLを作成して保存
+      setIcon(URL.createObjectURL(file))
+
+    }
+  }
+
+
+  return (
+
+    <div className="page">
+
+      {/* ===== ヘッダー ===== */}
+      <div className="header">
+      </div>
+
+
+      {/* ===== 装飾画像 ===== */}
+      <img src={decor} className="decor" />
+
+
+      {/* ===== プロフィール ===== */}
+      <div className="profile">
+
+        {/* アイコン画像（クリックすると変更できる） */}
+        <label className="icon-label">
+
+          {/* 画像選択input（非表示） */}
+          <input
+            type="file"
+            className="icon-input"
+            onChange={handleIconChange}
+          />
+
+          {/* アイコン表示 */}
+          <img
+            src={icon ?? "https://placehold.jp/150x150.png"}
+            className="icon"
+          />
+
+        </label>
+
+        {/* ユーザー名 */}
+        <h2 className="username">
+          彼女ちゃん
+        </h2>
+
+      </div>
+
+
+      {/* ===== メニュー ===== */}
+      <div className="menu">
+
+        {/* 登録情報 */}
+        <div className="menu-item">
+          <button
+            onClick={() => navigate("/account")}
+            className="menu-button"
+          >
+            <img src={accountIcon} className="menu-icon" />
+          </button>
+          <p className="menu-text">登録情報</p>
         </div>
-    )
+
+        {/* ログアウト */}
+        <div className="menu-item">
+          <button
+            onClick={() => navigate("/login")}
+            className="menu-button"
+          >
+            <img src={logoutIcon} className="menu-icon" />
+          </button>
+          <p className="menu-text">ログアウト</p>
+        </div>
+
+        {/* アカウント削除 */}
+        <div className="menu-item">
+          <button className="menu-button">
+            <img src={deleteIcon} className="menu-icon" />
+          </button>
+          <p className="menu-text delete">アカウントの削除</p>
+        </div>
+
+      </div>
+
+    </div>
+  )
 }

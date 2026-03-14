@@ -45,12 +45,14 @@ function TabBar() {
 
     return (
         <div className="tabbar-wrapper">
-            {/* 窪み付きピンクライン — tabbar-wrapperの中に収めることで位置が固定される */}
+            {/* 窪み付きピンクライン */}
             <NotchedLine />
 
             <div className="tabbar">
                 {tabs.map((tab) => {
-                    const active = location.pathname === tab.path;
+                    // /diary-calendar, /diary-detail なども /diary タブをアクティブにする
+                    const active = location.pathname === tab.path
+                        || (tab.path === "/diary" && location.pathname.startsWith("/diary"));
 
                     // ===== 中央チャットボタン =====
                     if (tab.isCenter) {

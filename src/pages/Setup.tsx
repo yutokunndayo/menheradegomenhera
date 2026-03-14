@@ -6,7 +6,7 @@ import AuthHeader from "../components/AuthHeader";
 import "../styles/login.css";
 import "../styles/setup.css";
 
-type Gender = "girlfriend" | "boyfriend" | null;
+type Gender = true | false | null;
 
 function Setup() {
     const navigate = useNavigate();
@@ -141,22 +141,22 @@ function Setup() {
                         <label className="field-label">あなたは？</label>
                         <div className="setup-gender-row">
                             <button
-                                className={`setup-gender-btn ${gender === "girlfriend" ? "selected" : ""}`}
-                                onClick={() => setGender("girlfriend")}
+                                className={`setup-gender-btn ${gender ? "selected" : ""}`}
+                                onClick={() => setGender(true)}
                             >
                                 <PiGenderFemaleBold
                                     size={36}
-                                    color={gender === "girlfriend" ? "#f5317f" : "#cccccc"}
+                                    color={gender ? "#f5317f" : "#cccccc"}
                                 />
                                 <span>彼女</span>
                             </button>
                             <button
-                                className={`setup-gender-btn ${gender === "boyfriend" ? "selected" : ""}`}
-                                onClick={() => setGender("boyfriend")}
+                                className={`setup-gender-btn ${!gender ? "selected" : ""}`}
+                                onClick={() => setGender(false)}
                             >
                                 <PiGenderMaleBold
                                     size={36}
-                                    color={gender === "boyfriend" ? "#f5317f" : "#cccccc"}
+                                    color={!gender ? "#f5317f" : "#cccccc"}
                                 />
                                 <span>彼氏</span>
                             </button>

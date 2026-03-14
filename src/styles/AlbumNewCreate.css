@@ -4,12 +4,22 @@
   padding-bottom:100px;
 }
 
-/* 写真選択ボタン */
+
+/* 枚数表示 */
+
+.photo-count{
+
+  padding:10px 20px;
+  font-size:14px;
+  color:#666;
+
+}
+
+
+/* 写真追加 */
 
 .select-area{
-  padding:20px;
-  display:flex;
-  justify-content:center;
+  padding:10px 20px;
 }
 
 .select-button{
@@ -17,12 +27,13 @@
   background:#f5317f;
   color:white;
 
-  padding:10px 20px;
+  padding:8px 16px;
 
   border-radius:20px;
 
-  cursor:pointer;
   font-size:14px;
+
+  cursor:pointer;
 
 }
 
@@ -31,18 +42,26 @@
 }
 
 
-/* 写真グリッド */
+/* グリッド */
 
 .photo-grid{
 
   padding:16px;
 
   display:grid;
+
   grid-template-columns:repeat(3,1fr);
 
   gap:6px;
 
 }
+
+.photo-wrapper{
+  position:relative;
+}
+
+
+/* 画像 */
 
 .photo-item{
 
@@ -56,13 +75,40 @@
 }
 
 
-/* 次へボタン */
+/* 選択番号 */
+
+.photo-number{
+
+  position:absolute;
+
+  top:6px;
+  left:6px;
+
+  width:22px;
+  height:22px;
+
+  background:#f5317f;
+  color:white;
+
+  border-radius:50%;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:12px;
+  font-weight:bold;
+
+}
+
+
+/* 次へ */
 
 .next-button{
 
   position:fixed;
 
-  bottom:80px;
+  bottom:90px;
   right:20px;
 
   background:#f5317f;

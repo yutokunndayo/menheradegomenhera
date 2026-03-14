@@ -1,96 +1,135 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { FiEdit2, FiTrash2 } from "react-icons/fi"
+import { FaHeart } from "react-icons/fa"
 
 import AppHeader from "../components/AppHeader"
 import TabBar from "../components/TabBar"
 
-import "../styles/AlbumNewCreate.css"
+import "../styles/AlbumPage.css"
 
-export default function AlbumNewCreate(){
+type Album = {
+  id:number
+  name:string
+  image:string
+  author:string
+  icon:string
+  date:string
+}
+
+export default function AlbumPage(){
 
   const navigate = useNavigate()
 
-  const [images,setImages] = useState<File[]>([])
+  const [albums,setAlbums] = useState<Album[]>([
+    {
+      id:1,
+      name:"初詣",
+      image:"https://placehold.jp/600x400.png",
+      author:"彼女ちゃん",
+      icon:"https://placehold.jp/40x40.png",
+      date:"2026年1月1日"
+    }
+  ])
 
-  const handleSelectImages = (e:React.ChangeEvent<HTMLInputElement>) => {
 
-    const files = e.target.files
+  const goCreate = ()=>{
 
-    if(!files) return
+    navigate("/album-new-create")
 
-    const newFiles = Array.from(files)
+  }
 
-    setImages(newFiles)
+
+  const deleteAlbum = (id:number)=>{
+
+    const newList = albums.filter(a=>a.id!==id)
+
+    setAlbums(newList)
 
   }
 
-  const goNext = () => {
-
-    navigate("/album-edit",{
-      state:{images}
-    })
-
-  }
 
   return(
 
-    <div className="album-new-page">
+    <div className="album-page">
 
       <AppHeader
         variant="simple"
-        title="写真を選択"
+        title=""
       />
 
-      {/* 写真選択 */}
-      <div className="select-area">
 
-        <label className="select-button">
+      {/* 新規作成ボタン */}
+      <button
+        className="album-create-btn"
+        onClick={goCreate}
+      >
 
-          写真を選択
+        <FaHeart className="heart-icon"/>
+        <span className="plus-icon">+</span>
 
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleSelectImages}
-          />
-
-        </label>
-
-      </div>
+      </button>
 
 
-      {/* 選択された写真 */}
-      <div className="photo-grid">
+      {/* アルバム一覧 */}
+      <div className="album-list">
 
-        {images.map((file,index)=>{
+        {albums.map((album)=>(
 
-          const url = URL.createObjectURL(file)
+          <div key={album.id} className="album-item">
 
-          return(
+            <div className="album-user">
+
+              <div className="album-user-left">
+
+                <img
+                  src={album.icon}
+                  className="album-user-icon"
+                />
+
+                <span className="album-user-name">
+                  {album.author}
+                </span>
+
+              </div>
+
+              <span className="album-date">
+                {album.date}
+              </span>
+
+            </div>
+
+
             <img
-              key={index}
-              src={url}
-              className="photo-item"
+              src={album.image}
+              className="album-image"
             />
-          )
 
-        })}
+
+            <div className="album-bottom">
+
+              <span className="album-title">
+                {album.name}
+              </span>
+
+              <div className="album-actions">
+
+                <FiEdit2 className="album-icon-btn"/>
+
+                <FiTrash2
+                  className="album-icon-btn"
+                  onClick={()=>deleteAlbum(album.id)}
+                />
+
+              </div>
+
+            </div>
+
+          </div>
+
+        ))}
 
       </div>
-
-
-      {/* 次へボタン */}
-      {images.length > 0 && (
-
-        <button
-          className="next-button"
-          onClick={goNext}
-        >
-          次へ
-        </button>
-
-      )}
 
       <TabBar/>
 

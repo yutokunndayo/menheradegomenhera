@@ -18,7 +18,8 @@ import {
   LogoutModalPage,
   SignupCallback,
   Test, // types/index から読み込む test
-} from './types/index';
+  DeleteAccountModal,
+} from './types/index'
 
 function App() {
   return (
@@ -66,6 +67,8 @@ function App() {
             <Route path='/test' element={<Test />} />
             <Route path='/demo' element={<GeminiDemo />} />
 
+            {/* アカウント削除モーダル画面 */}
+            <Route path='/delete-account' element={<DeleteAccountModal />} />
           </Routes>
         </main>
       </Router>

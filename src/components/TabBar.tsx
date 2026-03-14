@@ -13,7 +13,7 @@ const tabs = [
     { path: "/example", label: "画像", Icon: HiOutlinePhoto },
     { path: "/chat", label: "", Icon: HiChatBubbleOvalLeftEllipsis, isCenter: true },
     { path: "/calendar", label: "カレンダー", Icon: HiOutlineCalendarDays },
-    { path: "/example", label: "メモ", Icon: HiOutlineClipboardDocumentList },
+    { path: "/diary", label: "メモ", Icon: HiOutlineClipboardDocumentList },
 ];
 
 // ===== 窪み付きSVGライン =====

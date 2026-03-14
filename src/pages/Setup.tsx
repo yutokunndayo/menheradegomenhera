@@ -34,7 +34,7 @@ function Setup() {
 
     const handleSave = async () => {
         if (!name.trim()) { setError("名前を入力してください"); return; }
-        if (!gender) { setError("彼女・彼氏を選択してください"); return; }
+        if (gender === null) { setError("彼女・彼氏を選択してください"); return; }
 
         setError(null);
         setLoading(true);
@@ -151,12 +151,12 @@ function Setup() {
                                 <span>彼女</span>
                             </button>
                             <button
-                                className={`setup-gender-btn ${!gender ? "selected" : ""}`}
+                                className={`setup-gender-btn ${gender === false ? "selected" : ""}`}
                                 onClick={() => setGender(false)}
                             >
                                 <PiGenderMaleBold
                                     size={36}
-                                    color={!gender ? "#f5317f" : "#cccccc"}
+                                    color={gender === false ? "#f5317f" : "#cccccc"}
                                 />
                                 <span>彼氏</span>
                             </button>

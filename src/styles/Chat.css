@@ -150,31 +150,27 @@
     border-bottom-left-radius: 4px;
 }
 
-/* ===== リボン装飾 ===== */
-/*
-  画像で差し込む場合は bubble-ribbon-placeholder を削除して
-  <img src="..." className="bubble-ribbon ribbon-partner"> に差し替える
+/* ===== 装飾画像 =====
+   deco-top-right    → 右上（彼女のバブル: 絆創膏）
+   deco-bottom-right → 右下（彼氏のバブル: ハート）
 */
-.bubble-ribbon {
+.bubble-deco {
     position: absolute;
-    width: 18px;
-    height: 18px;
-    bottom: -6px;
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
 }
 
-.bubble-ribbon-placeholder {
-    position: absolute;
-    font-size: 12px;
+/* 彼女のバブル → 右上に絆創膏 */
+.deco-top-right {
+    top: -6px;
+    right: -5px;
+}
+
+/* 彼氏のバブル → 右下にハート */
+.deco-bottom-right {
     bottom: -8px;
-    line-height: 1;
-}
-
-.ribbon-partner {
-    right: -4px;
-}
-
-.ribbon-me {
-    left: -4px;
+    right: -8px;
 }
 
 /* ===== 入力バー ===== */

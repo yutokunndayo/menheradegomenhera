@@ -27,7 +27,7 @@ export default function HomePage() {
     <div className="page">
 
       {/* ===== ヘッダー（コンポーネント化）===== */}
-      {<HomePageHeader username="彼女ちゃん" />}
+      <HomePageHeader username="彼女ちゃん" />
 
       {/* ===== メニュー ===== */}
       <div className="menu">

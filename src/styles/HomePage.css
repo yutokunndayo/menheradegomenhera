@@ -4,47 +4,6 @@
   text-align: center;
 }
 
-.header {
-  background-color: #EA4266;
-  height: 70px;   /* 少し低め */
-  width: 100%;
-}
-
-.decor {
-  width: 100%;
-  margin-top: -8px;
-}
-
-.profile {
-  margin-top: -64px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.icon-label {
-  cursor: pointer;
-}
-
-.icon-input {
-  display: none;
-}
-
-.icon {
-  width: 112px;
-  height: 112px;
-  border-radius: 50%;
-  border: 4px solid #ec4899;
-  object-fit: cover;
-}
-
-.username {
-  margin-top: 12px;
-  font-size: 20px;
-  border-bottom: 2px solid #d1d5db;
-  padding: 0 12px 4px;
-}
-
 .menu {
   display: flex;
   justify-content: center;

@@ -14,6 +14,9 @@ import {
   CalendarPage,
   EventDetail,
   EventList,
+  LogoutModalPage,
+  SignupCallback,
+  DeleteAccountModal,
 } from './types/index'
 
 function App() {
@@ -29,6 +32,11 @@ function App() {
             <Route path='/setup' element={<Setup />} />
             <Route path='/forgot-password' element={<ForgotPassword />} />
             <Route path='/authCallback' element={<AuthCallback />} />
+            
+            {/* OAuth コールバック → チャット画面へ */}
+            <Route path='/signup-callback' element={<SignupCallback />} />
+
+            {/* チャット画面（ログイン後のメイン画面） */}
             <Route path='/chat' element={<Chat />} />
             <Route path='/calendar' element={<CalendarPage />} />
             <Route path='/event-list' element={<EventList />} />
@@ -36,6 +44,12 @@ function App() {
             <Route path='/home' element={<Home />} />
             <Route path='/account' element={<Account />} />
             <Route path='/example' element={<Example />} />
+
+            {/* ログアウトモーダル画面 */}
+            <Route path='/logout' element={<LogoutModalPage />} />
+
+            {/* アカウント削除モーダル画面 */}
+            <Route path='/delete-account' element={<DeleteAccountModal />} />
           </Routes>
         </main>
       </Router>

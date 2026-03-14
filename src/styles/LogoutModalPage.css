@@ -1,0 +1,95 @@
+.page {
+  min-height: 100vh;
+  background-color: #f3f4f6;
+  position: relative;
+  text-align: center;
+}
+
+
+/* ===== 背景を暗くする ===== */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+}
+
+
+/* ===== モーダル ===== */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  background: white;
+  padding: 28px 24px;
+  border-radius: 16px;
+
+  width: 280px;
+
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+
+  z-index: 10;
+}
+
+
+/* タイトル */
+.modal-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+
+/* テキスト */
+.modal-text {
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+
+/* ボタンエリア */
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+
+/* キャンセル */
+.cancel-button {
+  flex: 1;
+  padding: 10px;
+
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+
+  background: white;
+  cursor: pointer;
+}
+
+.cancel-button:hover {
+  background-color: #f3f4f6;
+}
+
+
+/* OKボタン */
+.ok-button {
+  flex: 1;
+  padding: 10px;
+
+  border-radius: 10px;
+  border: none;
+
+  background-color: #EA4266;
+  color: white;
+
+  cursor: pointer;
+}
+
+.ok-button:hover {
+  background-color: #d73759;
+}

@@ -39,7 +39,6 @@ export default function AlbumPage() {
     },
   ])
 
-
   // 処理済みのアルバム id を記録して二重追加を防ぐ
   const addedIdRef = useRef<number | null>(null)
 
@@ -62,29 +61,21 @@ export default function AlbumPage() {
 
 
   const goCreate = () => {
-
     navigate("/album-new-create")
-
   }
 
 
   const goDetail = (album: Album) => {
-
     navigate("/album-detail", {
       state: { album },
     })
-
   }
 
 
   const deleteAlbum = (e: React.MouseEvent, id: number) => {
-
-    e.stopPropagation() // アルバム詳細への遷移を防ぐ
-
+    e.stopPropagation()
     const newList = albums.filter((a) => a.id !== id)
-
     setAlbums(newList)
-
   }
 
 
@@ -97,7 +88,6 @@ export default function AlbumPage() {
         title=""
       />
 
-
       {/* 新規作成ボタン */}
       <button
         className="album-create-btn"
@@ -106,7 +96,6 @@ export default function AlbumPage() {
         <FaHeart className="heart-icon" />
         <span className="plus-icon">+</span>
       </button>
-
 
       {/* アルバム一覧 */}
       <div className="album-list">
@@ -140,12 +129,10 @@ export default function AlbumPage() {
 
             </div>
 
-
             <img
               src={album.image}
               className="album-image"
             />
-
 
             <div className="album-bottom">
 

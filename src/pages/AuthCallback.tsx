@@ -40,6 +40,14 @@ function AuthCallback() {
 
         // if (upsertError) throw upsertError;
 
+        const { error: upsertError } = await supabase.from("profiles").upsert({
+          id: user.id,
+        }, {
+          onConflict: "id",
+          ignoreDuplicates: true,
+        });
+        if (upsertError) throw upsertError;
+
         // profilesのgenderが未設定（初回）ならSetupへ、設定済みならchatへ
         const { data: profile } = await supabase
           .from("profiles")

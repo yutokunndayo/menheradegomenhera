@@ -16,7 +16,11 @@ function Register() {
         if (!agreed) return;
         setError(null);
         setLoading(true);
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({ email, password,
+            options: {
+                emailRedirectTo: `${window.location.origin}/signup-callback`,
+        }
+         });
         setLoading(false);
         if (error) {
             setError(error.message);

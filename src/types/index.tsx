@@ -14,3 +14,4 @@ export { default as Setup } from '../pages/Setup'
 export { default as HomePageHeader } from '../components/HomePageHeader'
 export { default as LogoutModalPage } from "../pages/LogoutModalPage"
 export { default as SignupCallback } from "../pages/SignupCallback"
+export { default as DeleteAccountModal } from "../pages/DeleteAccountModal"

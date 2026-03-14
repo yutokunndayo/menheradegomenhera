@@ -13,6 +13,7 @@ import {
   Setup,
   LogoutModalPage,
   SignupCallback,
+  DeleteAccountModal,
 } from './types/index'
 
 function App() {
@@ -55,6 +56,9 @@ function App() {
 
             {/* ログアウトモーダル画面 */}
             <Route path='/logout' element={<LogoutModalPage />} />
+
+            {/* アカウント削除モーダル画面 */}
+            <Route path='/delete-account' element={<DeleteAccountModal />} />
           </Routes>
         </main>
       </Router>

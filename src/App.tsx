@@ -20,6 +20,7 @@ import {
   EventList,
   LogoutModalPage,
   SignupCallback,
+  AlbumPage,
   Test, // types/index から読み込む test
 } from './types/index';
 
@@ -52,6 +53,9 @@ function App() {
 
             {/* ログアウトモーダル画面 */}
             <Route path='/logout' element={<LogoutModalPage />} />
+
+            {/* 共有アルバム画面 */}
+            <Route path='/album' element={<AlbumPage />} />
 
             {/* テスト画面群（お好みでどちらかにアクセスしてください） */}
             <Route path='/test' element={<Test />} />

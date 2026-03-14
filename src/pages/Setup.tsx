@@ -7,6 +7,9 @@ import "../styles/login.css";
 import "../styles/setup.css";
 
 type Gender = true | false | null;
+// true  = 彼女（ピンク）
+// false = 彼氏（水色）
+// null  = 未選択
 
 function Setup() {
     const navigate = useNavigate();
@@ -62,7 +65,7 @@ function Setup() {
             });
             if (upsertError) throw upsertError;
 
-            navigate("/chat", { replace: true });
+            navigate("/invite", { replace: true });
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : "エラーが発生しました");
         } finally {
@@ -72,7 +75,6 @@ function Setup() {
 
     return (
         <div className="auth-wrapper">
-            {/* ヘッダー（戻るボタンなし） */}
             <AuthHeader />
 
             <div className="auth-container">
@@ -140,23 +142,27 @@ function Setup() {
                     <div className="field-group">
                         <label className="field-label">あなたは？</label>
                         <div className="setup-gender-row">
+
+                            {/* 彼女ボタン → 選択時ピンク（selected クラス） */}
                             <button
-                                className={`setup-gender-btn ${gender ? "selected" : ""}`}
+                                className={`setup-gender-btn ${gender === true ? "selected" : ""}`}
                                 onClick={() => setGender(true)}
                             >
                                 <PiGenderFemaleBold
                                     size={36}
-                                    color={gender ? "#f5317f" : "#cccccc"}
+                                    color={gender === true ? "#f5317f" : "#cccccc"}
                                 />
                                 <span>彼女</span>
                             </button>
+
+                            {/* 彼氏ボタン → hover水色・選択時水色（selected-boyfriend クラス） */}
                             <button
-                                className={`setup-gender-btn ${gender === false ? "selected" : ""}`}
+                                className={`setup-gender-btn btn-boyfriend ${gender === false ? "selected-boyfriend" : ""}`}
                                 onClick={() => setGender(false)}
                             >
                                 <PiGenderMaleBold
                                     size={36}
-                                    color={gender === false ? "#f5317f" : "#cccccc"}
+                                    color={gender === false ? "#4dd0e1" : "#cccccc"}
                                 />
                                 <span>彼氏</span>
                             </button>

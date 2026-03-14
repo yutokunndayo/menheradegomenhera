@@ -65,7 +65,7 @@ function Setup() {
             });
             if (upsertError) throw upsertError;
 
-            navigate("/chat", { replace: true });
+            navigate("/invite", { replace: true });
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : "エラーが発生しました");
         } finally {

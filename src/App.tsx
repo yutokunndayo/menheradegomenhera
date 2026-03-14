@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // ↓ GeminiDemo を直接読み込む場合はこちらを残します
-import GeminiDemo from './pages/test'; 
-
+import GeminiDemo from './pages/test';
+import PartnerGuard from './components/PartnerGuard'
 import {
   Home,
   Example,
@@ -21,6 +21,8 @@ import {
   SignupCallback,
   AlbumPage,
   Test, // types/index から読み込む test
+  InvitePage,
+  JoinPage,
   DiaryPage,
   DiaryCalendar,
   DiaryDetail,
@@ -30,17 +32,20 @@ function App() {
   return (
     // GeminiProvider でアプリ全体を囲みます
 
-      <Router>
-        <main>
+    <Router>
+      <main>
+        <PartnerGuard>
           <Routes>
             <Route path='/' element={<TitlePage />} />
             <Route path='/auth' element={<AuthSelect />} />
             <Route path='/login' element={<Login />} />
             <Route path='/register' element={<Register />} />
             <Route path='/setup' element={<Setup />} />
+            <Route path='/invite' element={<InvitePage />} />
+            <Route path='/join' element={<JoinPage />} />
             <Route path='/forgot-password' element={<ForgotPassword />} />
             <Route path='/authCallback' element={<AuthCallback />} />
-            
+
             {/* OAuth コールバック → チャット画面へ */}
             <Route path='/signup-callback' element={<SignupCallback />} />
 
@@ -65,12 +70,13 @@ function App() {
             {/* 共有アルバム画面 */}
             <Route path='/album' element={<AlbumPage />} />
 
-          {/* ログアウトモーダル画面 */}
-          <Route path='/logout' element={<LogoutModalPage />} />
+            {/* ログアウトモーダル画面 */}
+            <Route path='/logout' element={<LogoutModalPage />} />
 
           </Routes>
-        </main>
-      </Router>
+        </PartnerGuard>
+      </main>
+    </Router>
 
   );
 }

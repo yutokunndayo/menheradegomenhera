@@ -176,25 +176,13 @@
     color: #dddddd;
 }
 
-/* イベントバッジ */
+/* イベントバッジ（共通ベース） */
 .cal-event-badges {
     display: flex;
     flex-direction: column;
     gap: 1px;
     width: 100%;
     padding: 0 2px;
-}
-
-.cal-event-badge {
-    font-size: 9px;
-    padding: 1px 4px;
-    border-radius: 3px;
-    background: var(--cal-accent);
-    color: white;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-align: left;
 }
 
 /* ===== EventDetail ===== */
@@ -551,16 +539,31 @@
 }
 
 /* ===== イベントバッジ（自分/パートナー色分け） ===== */
-/* badge-mine: アクセントカラー（自分のgenderテーマ） */
-.cal-event-badge.badge-mine {
-    background: var(--cal-accent);
-    opacity: 0.85;
+.cal-event-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
 }
 
-/* badge-pare: 薄め（パートナーの予定は区別しやすくする） */
-.cal-event-badge.badge-pare {
+/* 自分の予定 → テーマ色（彼氏=水色 / 彼女=ピンク） */
+.cal-event-badge.badge-mine {
     background: var(--cal-accent);
-    opacity: 0.5;
+}
+
+/* パートナーの予定 → 必ず反対の色 */
+/* 自分が彼氏（水色テーマ）→ パートナー（彼女）はピンク */
+.theme-boyfriend .cal-event-badge.badge-pare {
+    background: #f5317f;
+}
+
+/* 自分が彼女（ピンクテーマ）→ パートナー（彼氏）は水色 */
+.theme-girlfriend .cal-event-badge.badge-pare {
+    background: #4dd0e1;
 }
 
 /* ===== カレンダー月ヘッダーのsafe-area対応 ===== */

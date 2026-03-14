@@ -2,19 +2,32 @@
 
 .tabbar-wrapper {
     position: fixed;
-    bottom: 0;
+    bottom: -8px;
+    /* 全体を少し下に下げる */
     left: 0;
     right: 0;
     z-index: 100;
+    background: white;
 }
 
+/* ===== 窪み付きSVGライン ===== */
+.tabbar-top-line {
+    display: block;
+    width: 100%;
+    height: 28px;
+    /* 高さを増やしてラインを下に下げる */
+    overflow: visible;
+    margin-bottom: -1px;
+}
+
+/* ===== タブバー本体 ===== */
 .tabbar {
     display: flex;
     align-items: center;
     justify-content: space-around;
     background: white;
-    border-top: 1px solid #fce4ec;
-    padding: 8px 8px 20px;
+    padding: 4px 8px env(safe-area-inset-bottom, 12px);
+    /* 上下を削る */
     position: relative;
 }
 
@@ -23,11 +36,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
     background: none;
     border: none;
     cursor: pointer;
-    color: #bbbbbb;
+    color: #cccccc;
     padding: 4px 12px;
     transition: color 0.2s;
     flex: 1;
@@ -35,11 +47,6 @@
 
 .tabbar-item.active {
     color: #f5317f;
-}
-
-.tabbar-label {
-    font-size: 10px;
-    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
 
 /* ===== 中央チャットボタン ===== */
@@ -53,9 +60,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 16px rgba(245, 49, 127, 0.4);
+    box-shadow: 0 4px 16px rgba(245, 49, 127, 0.45);
     position: relative;
-    top: -16px;
+    top: -24px;
+    /* ラインのY座標変更に合わせて調整 */
     flex-shrink: 0;
     transition: transform 0.15s, box-shadow 0.15s;
 }

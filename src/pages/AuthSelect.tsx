@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import AuthHeader from "../components/AuthHeader";
 import "../styles/login.css";
 
 function AuthSelect() {
@@ -17,18 +18,9 @@ function AuthSelect() {
 
     return (
         <div className="auth-wrapper">
-            {/* スカラップヘッダー + ロゴ */}
-            <div className="scallop-header">
-                <div className="auth-logo">
-                    {/* アイコンプレースホルダー: 後でimgタグに差し替え */}
-                    <div className="logo-icon-placeholder" aria-label="アプリアイコン">
-                        <span className="logo-icon-text">♡</span>
-                    </div>
-                    <p className="logo-appname">Menhera</p>
-                </div>
-            </div>
+            {/* 戻るボタンなし（トップ選択画面なので） */}
+            <AuthHeader />
 
-            {/* ボタン群 */}
             <div className="auth-container">
                 <div className="auth-section">
                     <div className="select-buttons">

@@ -9,8 +9,12 @@ export { default as AuthSelect } from '../pages/AuthSelect'
 export { default as TitlePage } from '../pages/TitlePage'
 export { default as ForgotPassword } from '../pages/ForgotPassword'
 export { default as Chat } from '../pages/Chat'
+export { default as AuthHeader } from '../components/AuthHeader'
 export { default as TabBar } from '../components/TabBar'
 export { default as Setup } from '../pages/Setup'
+export { default as CalendarPage } from '../pages/CalendarPage'
+export { default as EventDetail } from '../pages/EventDetail'
+export { default as EventList } from '../pages/EventList'
 export { default as HomePageHeader } from '../components/HomePageHeader'
 export { default as LogoutModalPage } from "../pages/LogoutModalPage"
 export { default as SignupCallback } from "../pages/SignupCallback"

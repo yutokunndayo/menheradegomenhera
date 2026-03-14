@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import TabBar from "../components/TabBar";
-import { FiSend } from "react-icons/fi";       // 送信ボタン
-import { FiUser } from "react-icons/fi";       // アイコンプレースホルダー（ヘッダー・バブル横）
+import AppHeader from "../components/AppHeader";
+import { FiSend } from "react-icons/fi";
+import { FiUser } from "react-icons/fi";
 import "../styles/Chat.css";
 
 // ===== 型定義 =====
@@ -71,6 +72,9 @@ function Chat() {
     const [input, setInput] = useState("");
     const [partnerName, setPartnerName] = useState("彼女ちゃん");
     const [partnerIcon, setPartnerIcon] = useState<string | null>(null);
+
+    // 入力中かどうか（true のときタブバーを非表示にする）
+    const [isFocused, setIsFocused] = useState(false);
 
     // ===== 自分の性別 =====
     // この1つのstateだけで自分・相手 両方のテーマが切り替わる
@@ -165,26 +169,12 @@ function Chat() {
     return (
         <div className="chat-wrapper">
 
-            {/* ===== スカラップヘッダー ===== */}
-            {/* chat.css の .chat-header::after でスカラップ（波型）下端を描画している */}
-            <div className="chat-header">
-
-                {/* パートナーのアイコン */}
-                {/* partnerIcon が null のうちは FiUser アイコンをプレースホルダーとして表示 */}
-                {/* Step2 でパートナーの avatar が取得できたら img に自動切り替わる */}
-                <div className="chat-header-icon">
-                    {partnerIcon ? (
-                        <img src={partnerIcon} alt={partnerName} className="chat-partner-img" />
-                    ) : (
-                        <div className="chat-partner-placeholder" aria-label="パートナーアイコン">
-                            <FiUser size={22} color="white" strokeWidth={1.8} />
-                        </div>
-                    )}
-                </div>
-
-                {/* パートナーの名前（Step2 で取得した name が入る） */}
-                <p className="chat-header-name">{partnerName}</p>
-            </div>
+            {/* ===== ヘッダー（AppHeaderコンポーネント） ===== */}
+            <AppHeader
+                variant="chat"
+                name={partnerName}
+                icon={partnerIcon}
+            />
 
             {/* ===== メッセージエリア ===== */}
             <div className="chat-messages">
@@ -295,7 +285,6 @@ function Chat() {
             </div>
 
             {/* ===== 入力バー ===== */}
-            {/* chat.css の .chat-input-bar で position: fixed → 画面下部に固定される */}
             <div className="chat-input-bar">
                 <input
                     className="chat-input"
@@ -304,6 +293,8 @@ function Chat() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
                 />
                 {/* 送信ボタン: react-icons の FiSend を使用 */}
                 <button
@@ -317,7 +308,8 @@ function Chat() {
             </div>
 
             {/* ===== タブバー ===== */}
-            <TabBar />
+            {/* 入力中（キーボード表示中）はタブバーを非表示にする */}
+            {!isFocused && <TabBar />}
         </div>
     );
 }

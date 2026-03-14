@@ -7,7 +7,7 @@ import logoutIcon from "../assets/logout.png"
 import deleteIcon from "../assets/account-delete.png"
 
 // ヘッダーコンポーネント
-import HomePageHeader from "../components/HomePageHeader"
+// import HomePageHeader from "../components/HomePageHeader"
 
 // タブバーコンポーネント
 import TabBar from "../components/TabBar"
@@ -27,8 +27,8 @@ export default function HomePage() {
     <div className="page">
 
       {/* ===== ヘッダー（コンポーネント化）===== */}
-      <HomePageHeader username="彼女ちゃん" />
-      
+      {/* <HomePageHeader username="彼女ちゃん" /> */}
+
       {/* ===== メニュー ===== */}
       <div className="menu">
 

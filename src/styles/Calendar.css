@@ -81,25 +81,7 @@
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
 
-/* ===== カレンダー月表示 ===== */
-.cal-month-title {
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--cal-text);
-    min-width: 120px;
-    text-align: center;
-    margin: 0;
-}
-
-.cal-month-nav {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--cal-accent);
-    display: flex;
-    align-items: center;
-    padding: 4px;
-}
+/* ===== カレンダーヘッダーは AppHeader コンポーネント（appheader.css）で管理 ===== */
 
 /* 曜日ヘッダー */
 .cal-weekdays {
@@ -564,18 +546,6 @@
 /* 自分が彼女（ピンクテーマ）→ パートナー（彼氏）は水色 */
 .theme-girlfriend .cal-event-badge.badge-pare {
     background: #4dd0e1;
-}
-
-/* ===== カレンダー月ヘッダーのsafe-area対応 ===== */
-.cal-month-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    padding-top: max(16px, env(safe-area-inset-top));
-    padding-left: 20px;
-    padding-right: 20px;
-    padding-bottom: 8px;
 }
 
 /* ===== EventList ===== */

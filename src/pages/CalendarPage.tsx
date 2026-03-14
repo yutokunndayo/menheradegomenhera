@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
 import TabBar from "../components/TabBar";
+import AppHeader from "../components/AppHeader";
 import "../styles/calendar.css";
 
 // ===== 型定義 =====
@@ -123,16 +123,13 @@ function CalendarPage() {
     return (
         <div className={`cal-wrapper theme-${myGender}`}>
 
-            {/* ===== 月ナビゲーション ===== */}
-            <div className="cal-month-header">
-                <button className="cal-month-nav" onClick={prevMonth} aria-label="前の月">
-                    <HiChevronLeft size={22} />
-                </button>
-                <p className="cal-month-title">{year}年{month + 1}月</p>
-                <button className="cal-month-nav" onClick={nextMonth} aria-label="次の月">
-                    <HiChevronRight size={22} />
-                </button>
-            </div>
+            {/* ===== ヘッダー（AppHeaderコンポーネント） ===== */}
+            <AppHeader
+                variant="calendar"
+                title={`${year}年${month + 1}月`}
+                onPrev={prevMonth}
+                onNext={nextMonth}
+            />
 
             {/* ===== 曜日ヘッダー ===== */}
             <div className="cal-weekdays">

@@ -11,6 +11,7 @@ export { default as ForgotPassword } from '../pages/ForgotPassword'
 export { default as Chat } from '../pages/Chat'
 export { default as AuthHeader } from '../components/AuthHeader'
 export { default as TabBar } from '../components/TabBar'
+export { default as PartnerGuard } from '../components/PartnerGuard'
 export { default as Setup } from '../pages/Setup'
 export { default as CalendarPage } from '../pages/CalendarPage'
 export { default as EventDetail } from '../pages/EventDetail'
@@ -20,8 +21,13 @@ export { default as LogoutModalPage } from "../pages/LogoutModalPage"
 export { default as SignupCallback } from "../pages/SignupCallback"
 export { default as Test } from '../pages/test'
 export { default as DeleteAccountModal } from "../pages/DeleteAccountModal"
-export { default as AlbumPage } from "../pages/AlbumPage"
 export { default as DiaryPage } from '../pages/DiaryPage'
 export { default as AlbumNewCreate } from "../pages/AlbumNewCreate"
 export { default as AlbumEdit } from "../pages/AlbumEdit"
 export { default as AlbumDetail } from "../pages/AlbumDetail"  // 追加
+export { default as InvitePage } from '../pages/InvitePage'
+export { default as JoinPage } from '../pages/JoinPage'
+
+export { default as DiaryCalendar } from '../pages/DiaryCalendar'
+export { default as DiaryDetail } from '../pages/DiaryDetail'
+export { default as AlbumPage } from "../pages/AlbumPage"

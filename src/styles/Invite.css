@@ -1,0 +1,189 @@
+/* ===== invite.css ===== */
+
+/* ===== 招待セクション ===== */
+.invite-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.invite-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+    text-align: center;
+}
+
+.invite-desc {
+    font-size: 14px;
+    color: var(--text-sub);
+    text-align: center;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* QRコード */
+.invite-qr-wrap {
+    background: white;
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(245, 49, 127, 0.12);
+    border: 1.5px solid var(--pink-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.invite-qr {
+    width: 200px;
+    height: 200px;
+    display: block;
+}
+
+.invite-qr-placeholder {
+    width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-sub);
+    font-size: 13px;
+}
+
+/* URLコピーボタン */
+.invite-copy-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    background: var(--pink);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    box-shadow: 0 4px 16px rgba(245, 49, 127, 0.3);
+}
+
+.invite-copy-btn:hover:not(:disabled) {
+    background: var(--pink-dark);
+}
+
+.invite-copy-btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.invite-copy-btn.copied {
+    background: #4caf50;
+    box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+}
+
+.invite-copy-btn:disabled {
+    background: var(--disabled-bg);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* URL表示テキスト */
+.invite-url-text {
+    font-size: 10px;
+    color: var(--text-sub);
+    word-break: break-all;
+    text-align: center;
+    margin: 0;
+    padding: 0 8px;
+    line-height: 1.5;
+}
+
+/* ===== JoinPage ステータスエリア ===== */
+.join-status-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    min-height: 280px;
+    width: 100%;
+}
+
+/* スピナー */
+.join-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--pink-pale);
+    border-top-color: var(--pink);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ステータスアイコン */
+.join-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.join-icon--success {
+    background: var(--pink-pale);
+    color: var(--pink);
+}
+
+.join-icon--error {
+    background: #ffeaea;
+    color: #e53935;
+    font-weight: 700;
+}
+
+.join-status-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+    text-align: center;
+}
+
+.join-status-text--error {
+    color: #e53935;
+}
+
+.join-status-sub {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin: 0;
+    text-align: center;
+}
+
+/* 待機中テキスト */
+.invite-waiting {
+    color: #f5317f;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* 注意書き */
+.invite-notice {
+    font-size: 12px;
+    color: #aaaaaa;
+    text-align: center;
+    margin: 0;
+    padding: 0 8px;
+    line-height: 1.6;
+}

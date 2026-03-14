@@ -37,7 +37,8 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    gap: 8px;
+    gap: 16px;
+    /* 8px → 16px に広げる */
     width: 100%;
     padding: 8px 0;
 }
@@ -77,44 +78,25 @@
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
 
-/* ===== メーターエリア ===== */
+/* ===== メーターエリア（非表示） ===== */
 .diary-meter-area {
-    padding: 0 24px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: none;
 }
 
 .diary-meter-track {
-    width: 100%;
-    height: 12px;
-    background: var(--pink-pale);
-    border-radius: 6px;
-    position: relative;
-    overflow: visible;
+    display: none;
 }
 
 .diary-meter-fill {
-    height: 100%;
-    border-radius: 6px;
-    background: linear-gradient(to right, #b0bec5, var(--pink));
-    transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: none;
 }
 
-/* メーターの目盛り */
 .diary-meter-ticks {
-    position: absolute;
-    top: -8px;
-    right: 0;
-    display: flex;
-    gap: 4px;
-    align-items: flex-end;
+    display: none;
 }
 
 .diary-meter-tick {
-    width: 2px;
-    background: #e0b0c0;
-    border-radius: 1px;
+    display: none;
 }
 
 /* ===== 入力エリア ===== */
@@ -250,4 +232,351 @@
 .diary-graph-xlabel {
     font-size: 10px;
     color: var(--text-sub);
+}
+
+/* ===== スライダー ===== */
+.diary-slider-wrap {
+    width: 100%;
+    position: relative;
+    padding: 0 8px;
+}
+
+.diary-slider {
+    width: 100%;
+    height: 8px;
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+}
+
+.diary-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 26px;
+    height: 26px;
+    background: #f5317f;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(245, 49, 127, 0.4);
+    cursor: grab;
+    margin-top: -9px;
+    transition: transform 0.15s;
+}
+
+.diary-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+
+.diary-slider::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    background: #f5317f;
+    border-radius: 50%;
+    border: 3px solid white;
+    cursor: grab;
+}
+
+.diary-slider-ticks {
+    position: absolute;
+    right: 8px;
+    top: -6px;
+    display: flex;
+    gap: 4px;
+    align-items: flex-end;
+}
+
+.diary-slider-tick {
+    width: 2px;
+    background: #f0b0c8;
+    border-radius: 1px;
+}
+
+/* ===== 感情ボール（画像版） ===== */
+.diary-emotion-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0.5;
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+.diary-emotion-item.selected {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.diary-emotion-img {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    transition: all 0.25s ease;
+}
+
+.diary-emotion-item.selected .diary-emotion-img {
+    width: 68px;
+    height: 68px;
+}
+
+/* ===== コメント入力 ===== */
+.diary-comment-input {
+    width: 100%;
+    height: 46px;
+    padding: 0 16px;
+    border: 1.5px solid #f8bbd0;
+    border-radius: 24px;
+    font-size: 15px;
+    outline: none;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    color: #333333;
+    background: white;
+    transition: border-color 0.2s;
+}
+
+.diary-comment-input:focus {
+    border-color: #f5317f;
+}
+
+/* ===== 送信ボタンラッパー ===== */
+.diary-submit-wrap {
+    padding: 0 16px;
+    margin-top: 4px;
+}
+
+.diary-submit-btn {
+    width: 100%;
+    height: 52px;
+    background: #f5317f;
+    color: white;
+    border: none;
+    border-radius: 26px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    transition: all 0.2s;
+}
+
+.diary-submit-btn:hover:not(.sent) {
+    background: #d41f6a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 49, 127, 0.3);
+}
+
+.diary-submit-btn.sent {
+    background: #4caf50;
+}
+
+/* グラフの矢印 */
+.diary-graph-arrow {
+    margin-left: auto;
+    font-size: 18px;
+    color: #f5317f;
+}
+
+/* ===== 感情カレンダー（DiaryCalendar） ===== */
+.dcal-legend {
+    display: flex;
+    gap: 16px;
+    padding: 12px 16px 4px;
+}
+
+.dcal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 0 8px;
+    border-bottom: 1px solid #fce4ec;
+}
+
+.dcal-weekday {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #aaaaaa;
+    padding: 6px 0;
+}
+
+.dcal-weekday.sat {
+    color: #f5317f;
+}
+
+.dcal-weekday.sun {
+    color: #ef5350;
+}
+
+.dcal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 4px 8px 100px;
+    flex: 1;
+}
+
+.dcal-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 2px;
+    cursor: pointer;
+    min-height: 64px;
+    gap: 3px;
+}
+
+.dcal-day-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: #333333;
+}
+
+.dcal-day.today .dcal-day-num {
+    background: #f5317f;
+    color: white;
+    font-weight: 700;
+}
+
+.dcal-day.sat:not(.today) .dcal-day-num {
+    color: #f5317f;
+}
+
+.dcal-day.sun:not(.today) .dcal-day-num {
+    color: #ef5350;
+}
+
+.dcal-day.other-month .dcal-day-num {
+    color: #dddddd;
+}
+
+.dcal-day.other-month {
+    pointer-events: none;
+}
+
+.dcal-emotions {
+    display: flex;
+    gap: 1px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.dcal-emotion-img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+/* ===== 日記詳細（DiaryDetail） ===== */
+/* ===== DiaryDetail ヘッダー行（EventListスタイル） ===== */
+.ddetail-header {
+    display: flex;
+    align-items: center;
+    padding: max(16px, env(safe-area-inset-top, 16px)) 16px 12px;
+    border-bottom: 1px solid #fce4ec;
+    background: white;
+}
+
+.ddetail-back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #f5317f;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+.ddetail-body {
+    padding: 8px 16px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ddetail-card {
+    border-radius: 16px;
+    border: 2px solid;
+    overflow: hidden;
+    background: white;
+}
+
+.ddetail-card-header {
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+}
+
+.ddetail-card-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+}
+
+.ddetail-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ddetail-emotion-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ddetail-emotion-img {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    border-radius: 50%;
+    /* padding削除 — 背景色のみで枠線なし */
+}
+
+.ddetail-emotion-label {
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 18px;
+    border-radius: 20px;
+}
+
+.ddetail-text {
+    font-size: 15px;
+    color: #333333;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.ddetail-empty {
+    padding: 16px;
+    color: #aaaaaa;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* ===== 感情カレンダー 色丸2段 ===== */
+.dcal-dot-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+}
+
+.dcal-dot-row {
+    display: flex;
+    justify-content: center;
+}
+
+.dcal-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
 }

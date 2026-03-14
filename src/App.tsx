@@ -1,8 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import GeminiProvider from './components/api';
 // ↓ GeminiDemo を直接読み込む場合はこちらを残します
 import GeminiDemo from './pages/test';
-
+import PartnerGuard from './components/PartnerGuard'
 import {
   Home,
   Example,
@@ -22,10 +21,14 @@ import {
   SignupCallback,
   AlbumPage,
   Test, // types/index から読み込む test
+  InvitePage,
+  JoinPage,
   DiaryPage,
   AlbumNewCreate,
   AlbumEdit,
   AlbumDetail,
+  DiaryCalendar,
+  DiaryDetail,
 } from './types/index';
 
 function App() {
@@ -34,40 +37,44 @@ function App() {
 
     <Router>
       <main>
-        <Routes>
-          <Route path='/' element={<TitlePage />} />
-          <Route path='/auth' element={<AuthSelect />} />
-          <Route path='/login' element={<Login />} />
-          <Route path='/register' element={<Register />} />
-          <Route path='/setup' element={<Setup />} />
-          <Route path='/forgot-password' element={<ForgotPassword />} />
-          <Route path='/authCallback' element={<AuthCallback />} />
+        <PartnerGuard>
+          <Routes>
+            <Route path='/' element={<TitlePage />} />
+            <Route path='/auth' element={<AuthSelect />} />
+            <Route path='/login' element={<Login />} />
+            <Route path='/register' element={<Register />} />
+            <Route path='/setup' element={<Setup />} />
+            <Route path='/invite' element={<InvitePage />} />
+            <Route path='/join' element={<JoinPage />} />
+            <Route path='/forgot-password' element={<ForgotPassword />} />
+            <Route path='/authCallback' element={<AuthCallback />} />
 
-          {/* OAuth コールバック → チャット画面へ */}
-          <Route path='/signup-callback' element={<SignupCallback />} />
+            {/* OAuth コールバック → チャット画面へ */}
+            <Route path='/signup-callback' element={<SignupCallback />} />
 
-          {/* チャット画面（ログイン後のメイン画面） */}
-          <Route path='/chat' element={<Chat />} />
-          <Route path='/calendar' element={<CalendarPage />} />
-          <Route path='/event-list' element={<EventList />} />
-          <Route path='/event' element={<EventDetail />} />
+            {/* チャット画面（ログイン後のメイン画面） */}
+            <Route path='/chat' element={<Chat />} />
+            <Route path='/calendar' element={<CalendarPage />} />
+            <Route path='/event-list' element={<EventList />} />
+            <Route path='/event' element={<EventDetail />} />
+            <Route path='/home' element={<Home />} />
+            <Route path='/account' element={<Account />} />
+            <Route path='/example' element={<Example />} />
+
           <Route path='/diary' element={<DiaryPage />} />
-          <Route path='/home' element={<Home />} />
-          <Route path='/account' element={<Account />} />
-          <Route path='/example' element={<Example />} />
-
-            {/* 共有アルバム画面 */}
-            <Route path='/album' element={<AlbumPage />} />
+          <Route path='/diary-calendar' element={<DiaryCalendar />} />
+          <Route path='/diary-detail' element={<DiaryDetail />} />
+            {/* ログアウトモーダル画面 */}
+            <Route path='/logout' element={<LogoutModalPage />} />
 
             {/* テスト画面群（お好みでどちらかにアクセスしてください） */}
             <Route path='/test' element={<Test />} />
             <Route path='/demo' element={<GeminiDemo />} />
-          {/* ログアウトモーダル画面 */}
-          <Route path='/logout' element={<LogoutModalPage />} />
+            {/* 共有アルバム画面 */}
+            <Route path='/album' element={<AlbumPage />} />
 
-          {/* テスト画面群（お好みでどちらかにアクセスしてください） */}
-          <Route path='/test' element={<Test />} />
-          <Route path='/demo' element={<GeminiDemo />} />
+            {/* ログアウトモーダル画面 */}
+            <Route path='/logout' element={<LogoutModalPage />} />
 
           {/* アルバムの新規作成画面 */}
           <Route path="/album-new-create" element={<AlbumNewCreate />} />
@@ -77,7 +84,8 @@ function App() {
           {/* アルバム詳細画面 */}
           <Route path='/album-detail' element={<AlbumDetail />} />
 
-        </Routes>
+          </Routes>
+        </PartnerGuard>
       </main>
     </Router>
 

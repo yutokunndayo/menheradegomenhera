@@ -1,6 +1,6 @@
 import { useState } from "react"
 import decor from "../assets/decor.png"
-import "../styles/HomePageHeader.css"
+import "./HomePageHeader.css"
 
 type Props = {
   username: string

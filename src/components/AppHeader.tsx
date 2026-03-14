@@ -128,7 +128,6 @@ function AppHeader(props: AppHeaderProps) {
     return (
         <>
             <div className="appheader appheader--simple">
-                <p className="appheader-title">{props.title}</p>
             </div>
 
             <ScallopSVG />

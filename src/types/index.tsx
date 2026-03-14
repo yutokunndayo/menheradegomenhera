@@ -22,6 +22,9 @@ export { default as SignupCallback } from "../pages/SignupCallback"
 export { default as Test } from '../pages/test'
 export { default as DeleteAccountModal } from "../pages/DeleteAccountModal"
 export { default as DiaryPage } from '../pages/DiaryPage'
+export { default as AlbumNewCreate } from "../pages/AlbumNewCreate"
+export { default as AlbumEdit } from "../pages/AlbumEdit"
+export { default as AlbumDetail } from "../pages/AlbumDetail"  // 追加
 export { default as InvitePage } from '../pages/InvitePage'
 export { default as JoinPage } from '../pages/JoinPage'
 

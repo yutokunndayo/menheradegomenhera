@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { getCachedProfile, getCachedGender } from "../lib/userCache";
 import { HiPlus, HiChevronLeft } from "react-icons/hi2";
 import "../styles/calendar.css";
 
@@ -34,22 +33,23 @@ function EventList() {
     const [params] = useSearchParams();
     const dateStr = params.get("date") ?? new Date().toISOString().slice(0, 10);
 
-    const [myId,     setMyId]     = useState<string | null>(null);
-    const [myGender, setMyGender] = useState<MyGender>(getCachedGender() ?? "boyfriend");
-    const [events,   setEvents]   = useState<CalEvent[]>([]);
-    const [loading,  setLoading]  = useState(true);
+    const [myId, setMyId]         = useState<string | null>(null);
+    const [myGender, setMyGender] = useState<MyGender>("boyfriend");
+    const [events, setEvents]     = useState<CalEvent[]>([]);
+    const [loading, setLoading]   = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
-            // キャッシュ優先でプロフィール取得
-            const profile = await getCachedProfile();
-            if (!profile) return;
-            setMyId(profile.id);
-            setMyGender(profile.gender === false ? "boyfriend" : "girlfriend");
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            setMyId(user.id);
 
-            // タイムゾーンズレ防止のためローカル時刻文字列を使う
-            const from = `${dateStr}T00:00:00`;
-            const to   = `${dateStr}T23:59:59`;
+            const { data: profile } = await supabase
+                .from("profiles").select("gender").eq("id", user.id).single();
+            setMyGender(profile?.gender === false ? "boyfriend" : "girlfriend");
+
+            const from = dateStr + "T00:00:00.000Z";
+            const to   = dateStr + "T23:59:59.999Z";
 
             const { data, error } = await supabase
                 .from("schedules")

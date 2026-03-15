@@ -5,7 +5,7 @@ import { getCachedProfile, getCachedGender } from "../lib/userCache";
 import AppHeader from "../components/AppHeader";
 import TabBar from "../components/TabBar";
 import TitlePage from "./TitlePage";
-import "../styles/diary.css";
+import "../styles/Diary.css";
 
 const EMOTION_COLORS = ["#FFB39E", "#AFE7FF", "#A5EAB0", "#FFDFA8", "#E1A5EA"];
 

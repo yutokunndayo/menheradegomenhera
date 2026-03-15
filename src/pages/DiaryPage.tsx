@@ -42,10 +42,13 @@ function LineGraph({
     partnerScores: number[];
     myGender: MyGender;
 }) {
-    const W = 300, H = 80, PAD = 8;
+    const W = 300, H = 64;
+    // PADをゼロにして点を左端〜右端に配置 → X軸ラベルと完全一致
+    const PAD_X = 0;
+    const PAD_Y = 6;   // 上下だけ少し余白
     const n = myScores.length;
-    const toY = (s: number) => H - PAD - (s / 4) * (H - PAD * 2);
-    const toX = (i: number) => PAD + (i / (n - 1)) * (W - PAD * 2);
+    const toY = (s: number) => H - PAD_Y - (s / 4) * (H - PAD_Y * 2);
+    const toX = (i: number) => PAD_X + (i / (n - 1)) * (W - PAD_X * 2);
     const toPath = (scores: number[]) =>
         scores.map((s, i) => `${i === 0 ? "M" : "L"} ${toX(i)} ${toY(s)}`).join(" ");
 
@@ -53,9 +56,13 @@ function LineGraph({
     const pareColor = myGender === "boyfriend" ? "#f5317f" : "#4dd0e1";
 
     return (
-        <svg className="diary-graph-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+        <svg
+            className="diary-graph-svg"
+            viewBox={`0 0 ${W} ${H}`}
+            preserveAspectRatio="none"   // 横幅に合わせて引き伸ばす
+        >
             {[0, 1, 2, 3, 4].map(v => (
-                <line key={v} x1={PAD} y1={toY(v)} x2={W - PAD} y2={toY(v)}
+                <line key={v} x1={0} y1={toY(v)} x2={W} y2={toY(v)}
                     stroke="#f0d0d8" strokeWidth="0.5" strokeDasharray="3,3" />
             ))}
             <path d={toPath(partnerScores)} fill="none" stroke={pareColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

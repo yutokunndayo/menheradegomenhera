@@ -38,3 +38,22 @@
   border-bottom: 2px solid #d1d5db;
   padding: 0 12px 4px;
 }
+
+.icon-wrapper{
+  width:112px;
+  height:112px;
+}
+
+.default-icon{
+  width:112px;
+  height:112px;
+
+  border-radius:50%;
+  border:4px solid #ec4899;
+
+  background:#f5317f;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}

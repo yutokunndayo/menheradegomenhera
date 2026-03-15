@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
+import iconImage from "../assets/icon.png";
 
 function TitlePage() {
   const navigate = useNavigate();
@@ -21,10 +22,8 @@ function TitlePage() {
 
       <div className="title-content">
         {/* アイコンプレースホルダー: 後でimgタグに差し替え */}
-        <div className="title-icon-placeholder" aria-label="アプリアイコン">
-          <span className="title-icon-text">♡</span>
-        </div>
-        <p className="title-appname">Menhera</p>
+        <img className="title-content-img" src={iconImage} alt="アイコン" />
+        <p className="title-appname">KoiNavi</p>
       </div>
     </div>
   );

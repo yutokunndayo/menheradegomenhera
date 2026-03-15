@@ -64,8 +64,7 @@ function App() {
             <Route path='/diary' element={<DiaryPage />} />
             <Route path='/diary-calendar' element={<DiaryCalendar />} />
             <Route path='/diary-detail' element={<DiaryDetail />} />
-            {/* ログアウトモーダル画面 */}
-            <Route path='/logout' element={<LogoutModalPage />} />
+
 
             {/* テスト画面群（お好みでどちらかにアクセスしてください） */}
             <Route path='/test' element={<Test />} />

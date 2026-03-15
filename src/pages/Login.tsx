@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { getAfterLoginDest } from "../lib/authRedirect";
 import AuthHeader from "../components/AuthHeader";
 import "../styles/login.css";
 
@@ -14,18 +15,19 @@ function Login() {
   const handleLogin = async () => {
     setError(null);
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) {
+    if (error || !data.user) {
       setError("メールアドレスまたはパスワードが正しくありません");
     } else {
-      navigate("/account", { replace: true });
+      // pendingJoin があれば /join へ、なければ通常フロー
+      const dest = await getAfterLoginDest(data.user.id);
+      navigate(dest, { replace: true });
     }
   };
 
   return (
     <div className="auth-wrapper">
-      {/* スカラップヘッダー（backTo="/auth" で戻るボタンを表示） */}
       <AuthHeader backTo="/auth" />
 
       <div className="auth-container">
@@ -53,10 +55,7 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
             />
-            <button
-              className="forgot-link"
-              onClick={() => navigate("/forgot-password")}
-            >
+            <button className="forgot-link" onClick={() => navigate("/forgot-password")}>
               パスワードをお忘れの方はこちら
             </button>
           </div>

@@ -58,9 +58,10 @@ function App() {
             <Route path='/account' element={<Account />} />
             <Route path='/example' element={<Example />} />
 
-          <Route path='/diary' element={<DiaryPage />} />
-          <Route path='/diary-calendar' element={<DiaryCalendar />} />
-          <Route path='/diary-detail' element={<DiaryDetail />} />
+            <Route path='/diary' element={<DiaryPage />} />
+            <Route path='/diary-calendar' element={<DiaryCalendar />} />
+            <Route path='/diary-detail' element={<DiaryDetail />} />
+
             {/* ログアウトモーダル画面 */}
             <Route path='/logout' element={<LogoutModalPage />} />
 

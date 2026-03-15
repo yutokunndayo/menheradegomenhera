@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { getAfterLoginDest } from "../lib/authRedirect";
 
 function AuthCallback() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ function AuthCallback() {
       try {
         const url = window.location.href;
 
-        // 1) PKCE（?code=...）ならセッション交換
+        // PKCE（?code=...）ならセッション交換
         if (url.includes("?code=")) {
           const { error } = await supabase.auth.exchangeCodeForSession(url);
           if (error) throw error;
@@ -29,17 +30,7 @@ function AuthCallback() {
           return;
         }
 
-        // const { error: upsertError } = await supabase.from("profiles").upsert({
-        //   id: user.id,
-        //   mail: user.email,
-        // }, {
-        //   // nameやgenderがすでにある場合は上書きしない
-        //   onConflict: "id",
-        //   ignoreDuplicates: true,
-        // });
-
-        // if (upsertError) throw upsertError;
-
+        // profiles に upsert（既存レコードは上書きしない）
         const { error: upsertError } = await supabase.from("profiles").upsert({
           id: user.id,
         }, {
@@ -48,18 +39,10 @@ function AuthCallback() {
         });
         if (upsertError) throw upsertError;
 
-        // profilesのgenderが未設定（初回）ならSetupへ、設定済みならchatへ
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("gender")
-          .eq("id", user.id)
-          .single();
+        // pendingJoin / setup / invite / chat を判定して遷移
+        const dest = await getAfterLoginDest(user.id);
+        navigate(dest, { replace: true });
 
-        if (profile?.gender === null) {
-          navigate("/setup", { replace: true });
-        } else {
-          navigate("/chat", { replace: true });
-        }
       } catch (e) {
         console.error("AuthCallback error:", e);
         navigate("/login", { replace: true });

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { getAfterLoginDest } from "../lib/authRedirect";
 import AuthHeader from "../components/AuthHeader";
 import "../styles/login.css";
 
@@ -17,16 +18,17 @@ function Register() {
         if (!agreed) return;
         setError(null);
         setLoading(true);
-        const { error } = await supabase.auth.signUp({ email, password,
-            options: {
-                emailRedirectTo: `${window.location.origin}/signup-callback`,
-        }
-         });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         setLoading(false);
         if (error) {
             setError(error.message);
         } else {
             setSuccess(true);
+            // 新規登録後: pendingJoin があれば /join、なければ /setup
+            const dest = data.user
+                ? await getAfterLoginDest(data.user.id)
+                : "/setup";
+            setTimeout(() => navigate(dest, { replace: true }), 1500);
         }
     };
 
@@ -80,13 +82,8 @@ function Register() {
                             >
                                 {agreed && (
                                     <svg viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M1 5L4.5 8.5L11 1.5"
-                                            stroke="white"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
+                                        <path d="M1 5L4.5 8.5L11 1.5" stroke="white" strokeWidth="2"
+                                            strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
                                 )}
                             </span>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { getCachedProfile, getCachedGender } from "../lib/userCache";
@@ -14,8 +14,8 @@ interface CalEvent {
     name: string;
     start_at: string;
     end_at: string;
-    is_shared: boolean; // true=2人の予定, false=自分だけ
-    all_day: boolean;   // true=終日, false=時間指定
+    is_shared: boolean;
+    all_day: boolean;
     memo: string | null;
 }
 
@@ -42,16 +42,20 @@ function CalendarPage() {
     const today = new Date();
 
     const [myId, setMyId] = useState<string | null>(null);
-    // getCachedGenderで同期的に初期値を設定 → テーマのチラつきなし
     const [myGender, setMyGender] = useState<MyGender | null>(getCachedGender);
     const [year, setYear] = useState(today.getFullYear());
     const [month, setMonth] = useState(today.getMonth());
     const [events, setEvents] = useState<CalEvent[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const yearRef  = useRef(year);
+    const monthRef = useRef(month);
+    yearRef.current  = year;
+    monthRef.current = month;
+
     const days = buildCalDays(year, month);
 
-    // ===== プロフィール取得（キャッシュ優先・初回のみSupabase） =====
+    // ===== プロフィール取得 =====
     useEffect(() => {
         const fetchProfile = async () => {
             const profile = await getCachedProfile();
@@ -62,31 +66,53 @@ function CalendarPage() {
         fetchProfile();
     }, []);
 
-    // ===== 予定取得（月が変わるたびに再取得） =====
+    // ===== 予定取得 =====
+    const fetchEvents = async () => {
+        const pad = (n: number) => String(n).padStart(2, "0");
+        const y = yearRef.current;
+        const m = monthRef.current;
+        const lastDay = new Date(y, m + 1, 0).getDate();
+        const from = `${y}-${pad(m + 1)}-01T00:00:00`;
+        const to   = `${y}-${pad(m + 1)}-${pad(lastDay)}T23:59:59`;
+
+        const { data, error } = await supabase
+            .from("schedules")
+            .select("id, user_id, name, start_at, end_at, is_shared, all_day, memo")
+            .gte("start_at", from)
+            .lte("start_at", to)
+            .order("start_at", { ascending: true });
+
+        if (error) {
+            console.error("予定取得エラー:", error.message);
+        } else {
+            setEvents((data ?? []) as CalEvent[]);
+        }
+    };
+
+    // ===== 初回取得 + Realtime購読 =====
     useEffect(() => {
-        const fetchEvents = async () => {
-            setLoading(true);
+        // 初回取得
+        setLoading(true);
+        fetchEvents().finally(() => setLoading(false));
 
-            const from = new Date(year, month, 1).toISOString();
-            const to = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+        // Realtime: schedulesテーブルに変更があったら再取得（1接続のみ）
+        const channel = supabase
+            .channel("schedules-changes")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "schedules" },
+                () => {
+                    // INSERT / UPDATE / DELETE どれでも再取得
+                    fetchEvents();
+                }
+            )
+            .subscribe();
 
-            // RLSで自分とパートナーの予定が両方取れる
-            const { data, error } = await supabase
-                .from("schedules")
-                .select("id, user_id, name, start_at, end_at, is_shared, all_day, memo")
-                .gte("start_at", from)
-                .lte("start_at", to)
-                .order("start_at", { ascending: true });
-
-            if (error) {
-                console.error("予定取得エラー:", error.message);
-            } else {
-                setEvents((data ?? []) as CalEvent[]);
-            }
-            setLoading(false);
+        return () => {
+            supabase.removeChannel(channel);
         };
-        fetchEvents();
-    }, [year, month]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [year, month]); // 月が変わったら再購読
 
     const prevMonth = () => {
         if (month === 0) { setYear(y => y - 1); setMonth(11); }
@@ -98,24 +124,21 @@ function CalendarPage() {
     };
 
     const getEventsForDay = (d: Date) =>
-        events.filter(e => e.start_at.slice(0, 10) === toDateStr(d));
+        events.filter(e => toDateStr(new Date(e.start_at)) === toDateStr(d));
 
-    // 自分の予定かパートナーの予定かを判定
-    const isMyEvent = (ev: CalEvent) => ev.user_id === myId;
+    // 「自分の予定」= 自分が自分のために作った OR 相手が自分のために作った
+    const isMyEvent = (ev: CalEvent) =>
+        (ev.user_id === myId && !ev.is_shared) || (ev.user_id !== myId && ev.is_shared);
 
-    // バッジ色: 彼女の予定=ピンク, 彼氏の予定=水色
-    // 自分がboyfriend → 自分=水色, パートナー(彼女)=ピンク
-    // 自分がgirlfriend → 自分=ピンク, パートナー(彼氏)=水色
     const getBadgeColor = (ev: CalEvent): string => {
         const isMine = isMyEvent(ev);
         if (myGender === "boyfriend") {
-            return isMine ? "#4dd0e1" : "#f5317f"; // 自分=水色, 彼女=ピンク
+            return isMine ? "#4dd0e1" : "#f5317f";
         } else {
-            return isMine ? "#f5317f" : "#4dd0e1"; // 自分=ピンク, 彼氏=水色
+            return isMine ? "#f5317f" : "#4dd0e1";
         }
     };
 
-    // gender取得前はタイトル画面を表示（テーマのチラつき防止）
     if (!myGender) return <TitlePage hideTimer />;
 
     return (
@@ -128,7 +151,6 @@ function CalendarPage() {
                 onNext={nextMonth}
             />
 
-            {/* 曜日ヘッダー */}
             <div className="cal-weekdays">
                 {WEEKDAYS.map((d, i) => (
                     <div key={d} className={`cal-weekday ${i === 5 ? "sat" : i === 6 ? "sun" : ""}`}>
@@ -137,7 +159,6 @@ function CalendarPage() {
                 ))}
             </div>
 
-            {/* 日付グリッド */}
             <div className="cal-grid">
                 {days.map((d, i) => {
                     const isOther = d.getMonth() !== month;
@@ -161,7 +182,6 @@ function CalendarPage() {
                                 <div className="cal-event-badges">
                                     {dayEvents.slice(0, 2).map(ev => {
                                         const color = getBadgeColor(ev);
-                                        // 終日=不透明, 時間指定=半透明
                                         const opacity = ev.all_day ? 1 : 0.55;
                                         return (
                                             <div

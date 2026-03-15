@@ -13,9 +13,14 @@ const WEEKDAYS_SHORT = ["月", "火", "水", "木", "金", "土", "日"];
 const HOURS   = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
 
+// ===== ローカル時刻ISO文字列（タイムゾーンズレ防止） =====
+function toLocalISO(d: Date): string {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+}
+
 // ===== スクロールドラムロール =====
-// items: 表示する選択肢配列、value: 現在選択値、onChange: 変更コールバック
-const ITEM_H = 44; // 1項目の高さ(px)
+const ITEM_H = 44;
 
 function DrumRoll({ items, value, onChange, accent }: {
     items: string[];
@@ -26,7 +31,6 @@ function DrumRoll({ items, value, onChange, accent }: {
     const ref = useRef<HTMLDivElement>(null);
     const ignoreScroll = useRef(false);
 
-    // 選択値が変わったらスクロール位置を合わせる
     useEffect(() => {
         const idx = items.indexOf(value);
         if (ref.current && idx >= 0) {
@@ -45,7 +49,6 @@ function DrumRoll({ items, value, onChange, accent }: {
 
     return (
         <div style={{ position: "relative", width: 80 }}>
-            {/* 選択中ハイライト帯 */}
             <div style={{
                 position: "absolute",
                 top: ITEM_H * 2,
@@ -69,7 +72,6 @@ function DrumRoll({ items, value, onChange, accent }: {
                     zIndex: 2,
                 }}
             >
-                {/* 上下に2個分のパディング */}
                 <div style={{ height: ITEM_H * 2 }} />
                 {items.map(item => (
                     <div
@@ -94,7 +96,6 @@ function DrumRoll({ items, value, onChange, accent }: {
                 ))}
                 <div style={{ height: ITEM_H * 2 }} />
             </div>
-            {/* スクロールバー非表示 */}
             <style>{`div::-webkit-scrollbar{display:none}`}</style>
         </div>
     );
@@ -116,7 +117,6 @@ function formatDateBtn(d: Date) {
     return `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`;
 }
 
-// ===== 現在時刻を5分単位に丸める =====
 function roundToFive(d: Date): { h: string; m: string } {
     const m = Math.ceil(d.getMinutes() / 5) * 5;
     const h = m >= 60 ? (d.getHours() + 1) % 24 : d.getHours();
@@ -139,13 +139,11 @@ function EventDetail() {
     const [myName,      setMyName]      = useState("自分");
     const [partnerName, setPartnerName] = useState("パートナー");
 
-    const [title,           setTitle]           = useState("");
-    const [memo,            setMemo]            = useState("");
-    // isPartnerOwner: trueならパートナーの予定として保存（user_idがパートナーになる）
-    const [isPartnerOwner,  setIsPartnerOwner]  = useState(false);
-    const [allDay,          setAllDay]          = useState(false);
+    const [title,          setTitle]          = useState("");
+    const [memo,           setMemo]           = useState("");
+    const [isPartnerOwner, setIsPartnerOwner] = useState(false);
+    const [allDay,         setAllDay]         = useState(false);
 
-    // ===== デフォルト: 現在時刻 & 終了は+1時間 =====
     const now       = new Date();
     const { h: nowH, m: nowM } = roundToFive(now);
     const endHourNum = (parseInt(nowH) + 1) % 24;
@@ -162,7 +160,6 @@ function EventDetail() {
     const [picker,   setPicker]   = useState<PickerOpen>("none");
     const [saving,   setSaving]   = useState(false);
 
-    // アクセントカラー（gender確定後に決まる）
     const accent = myGender === "girlfriend" ? "#f5317f" : "#4dd0e1";
 
     useEffect(() => {
@@ -188,8 +185,6 @@ function EventDetail() {
                     const ed = new Date(ev.end_at);
                     setTitle(ev.name);
                     setMemo(ev.memo ?? "");
-                    // 誰の予定か: 自分のIDと一致しなければパートナーの予定
-                    setIsPartnerOwner(ev.user_id !== profile.id);
                     setAllDay(ev.all_day ?? false);
                     setStartDate(sd); setEndDate(ed);
                     setStartHour(String(sd.getHours()).padStart(2, "0"));
@@ -201,6 +196,14 @@ function EventDetail() {
                         Math.abs(parseInt(a) - ed.getMinutes()) <= Math.abs(parseInt(b) - ed.getMinutes()) ? a : b);
                     setEndMin(em);
                     setCalYear(sd.getFullYear()); setCalMonth(sd.getMonth());
+
+                    // ===== 誰の予定かを閲覧者の視点で正しく判定 =====
+                    // 「自分の予定」= 自分が自分のために作った OR 相手が自分のために作った
+                    // isPartnerOwner = その逆
+                    const isMine =
+                        (ev.user_id === profile.id && !ev.is_shared) ||
+                        (ev.user_id !== profile.id && ev.is_shared);
+                    setIsPartnerOwner(!isMine);
                 }
             }
         };
@@ -218,7 +221,6 @@ function EventDetail() {
             let endIso: string;
 
             if (allDay) {
-                // 終日: ローカル日付のYYYY-MM-DD形式で保存（タイムゾーンズレ防止）
                 const sy = startDate.getFullYear();
                 const sm = String(startDate.getMonth() + 1).padStart(2, "0");
                 const sd = String(startDate.getDate()).padStart(2, "0");
@@ -232,29 +234,28 @@ function EventDetail() {
                 sd.setHours(parseInt(startHour), parseInt(startMin), 0, 0);
                 const ed = new Date(endDate);
                 ed.setHours(parseInt(endHour), parseInt(endMin), 0, 0);
-                startIso = sd.toISOString();
-                endIso   = ed.toISOString();
+                startIso = toLocalISO(sd);
+                endIso   = toLocalISO(ed);
             }
 
             const payload = {
                 name:      title.trim(),
                 start_at:  startIso,
                 end_at:    endIso,
-                is_shared: false,  // is_sharedは2人共有予定フラグ（今後使う用）
+                // is_shared=true → パートナーの予定, false → 自分の予定
+                // user_idは常に自分のIDで保存（RLS対策）
+                is_shared: isPartnerOwner,
                 all_day:   allDay,
                 memo:      memo.trim() || null,
             };
 
-            // 誰の予定か: isPartnerOwner=trueならパートナーのuser_idで保存
-            const ownerId = isPartnerOwner && partnerId ? partnerId : myId ?? user.id;
-
             if (isEditMode && editId) {
                 const { error } = await supabase.from("schedules")
-                    .update({ ...payload, user_id: ownerId }).eq("id", editId);
+                    .update({ ...payload }).eq("id", editId);
                 if (error) throw error;
             } else {
                 const { error } = await supabase.from("schedules")
-                    .insert({ ...payload, user_id: ownerId });
+                    .insert({ ...payload, user_id: user.id });
                 if (error) throw error;
             }
             navigate("/calendar", { replace: true });
@@ -278,10 +279,8 @@ function EventDetail() {
         setPicker("none");
     };
 
-    // gender取得前はタイトル画面（チラつき・真っ白防止）
     if (!myGender) return <TitlePage hideTimer />;
 
-    // パートナーの予定として追加する場合はテーマを反転
     const currentTheme: MyGender = isPartnerOwner
         ? (myGender === "boyfriend" ? "girlfriend" : "boyfriend")
         : myGender;

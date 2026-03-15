@@ -18,22 +18,17 @@ export default function HomePage() {
 
   const navigate = useNavigate()
 
-  // ユーザー名
   const [username, setUsername] = useState("")
+  const [icon, setIcon] = useState<string | null>(null)
 
   useEffect(() => {
-
-    const getUserName = async () => {
-
-      // ログインユーザー取得
+    const getUserProfile = async () => {
       const { data: userData } = await supabase.auth.getUser()
-
       if (!userData.user) return
 
-      // usersテーブルから display_name 取得
       const { data, error } = await supabase
         .from("profiles")
-        .select("name")
+        .select("name, avatar")
         .eq("id", userData.user.id)
         .single()
 
@@ -43,19 +38,18 @@ export default function HomePage() {
       }
 
       setUsername(data.name || "")
-
+      // profiles.avatar には Setup で保存した完全なURLが入っているのでそのまま使う
+      setIcon(data.avatar ?? null)
     }
 
-    getUserName()
-
+    getUserProfile()
   }, [])
 
   return (
-
     <div className="page">
 
       {/* ===== ヘッダー ===== */}
-      <HomePageHeader username={username} />
+      <HomePageHeader username={username} icon={icon} />
 
       {/* ===== メニュー ===== */}
       <div className="menu">

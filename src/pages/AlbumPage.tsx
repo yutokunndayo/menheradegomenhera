@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { supabase } from "../lib/supabase"
-import { getCachedProfile } from "../lib/userCache"
 import { FaHeart } from "react-icons/fa"
-import { FiEdit2, FiTrash2 } from "react-icons/fi"
+import { FiEdit2, FiTrash2, FiUser } from "react-icons/fi"
 import AppHeader from "../components/AppHeader"
 import TabBar from "../components/TabBar"
 import "../styles/AlbumPage.css"
@@ -15,7 +14,7 @@ type Album = {
   created_at: string
   user_id: string
   author_name?: string
-  author_icon?: string
+  author_icon?: string | null
 }
 
 export default function AlbumPage() {
@@ -29,19 +28,53 @@ export default function AlbumPage() {
 
   const fetchAlbums = async () => {
     setLoading(true)
-    const profile = await getCachedProfile()
-    setMyId(profile?.id ?? null)
 
+    // ログインユーザー取得
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setLoading(false); return }
+    setMyId(user.id)
+
+    // 自分のプロフィールをSupabaseから直接取得（avatar含む）
+    const { data: myProfile } = await supabase
+      .from("profiles")
+      .select("name, avatar, partner")
+      .eq("id", user.id)
+      .maybeSingle()
+
+    const myName:   string      = myProfile?.name   ?? "自分"
+    const myAvatar: string|null = myProfile?.avatar ?? null
+
+    // パートナーのプロフィールを取得
+    let partnerName:   string      = "パートナー"
+    let partnerAvatar: string|null = null
+
+    if (myProfile?.partner) {
+      const { data: partnerProfile } = await supabase
+        .from("profiles")
+        .select("name, avatar")
+        .eq("id", myProfile.partner)
+        .maybeSingle()
+
+      if (partnerProfile) {
+        partnerName   = partnerProfile.name   ?? "パートナー"
+        partnerAvatar = partnerProfile.avatar ?? null
+      }
+    }
+
+    // アルバム一覧取得
     const { data, error } = await supabase
       .from("albums")
       .select("id, user_id, title, cover_url, created_at")
       .order("created_at", { ascending: false })
+
     if (error) { console.error(error); setLoading(false); return }
 
     const enriched = (data ?? []).map(a => ({
       ...a,
-      author_name: a.user_id === profile?.id ? (profile?.name ?? "自分") : "パートナー",
+      author_name:  a.user_id === user.id ? myName   : partnerName,
+      author_icon:  a.user_id === user.id ? myAvatar : partnerAvatar,
     }))
+
     setAlbums(enriched)
     setLoading(false)
   }
@@ -76,7 +109,6 @@ export default function AlbumPage() {
     <div className="album-page">
       <AppHeader variant="simple" title="" />
 
-      {/* ハート追加ボタン */}
       <button className="album-create-btn" onClick={() => navigate("/album-new-create")}>
         <FaHeart className="heart-icon" />
         <span className="plus-icon">+</span>
@@ -101,15 +133,23 @@ export default function AlbumPage() {
               {/* 投稿者行 */}
               <div className="album-user">
                 <div className="album-user-left">
-                  <div className="album-user-icon-placeholder">
-                    {album.author_name?.[0] ?? "?"}
-                  </div>
+                  {album.author_icon ? (
+                    <img
+                      src={album.author_icon}
+                      alt={album.author_name}
+                      className="album-user-icon-img"
+                    />
+                  ) : (
+                    <div className="album-user-icon-placeholder">
+                      <FiUser size={14} color="white" />
+                    </div>
+                  )}
                   <span className="album-user-name">{album.author_name}</span>
                 </div>
                 <span className="album-date">{formatDate(album.created_at)}</span>
               </div>
 
-              {/* メイン画像 600×600 */}
+              {/* メイン画像 */}
               {album.cover_url ? (
                 <img src={album.cover_url} className="album-image" alt={album.title} />
               ) : (

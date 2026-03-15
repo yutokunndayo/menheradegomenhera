@@ -1,0 +1,97 @@
+/* ページ全体 */
+.album-edit-page {
+  min-height: 100vh;
+  background: #f7f7f7;
+  padding-bottom: 120px;
+}
+
+/* タイトル入力 */
+.album-title-input {
+  padding: 20px 16px;
+}
+
+.album-title-input input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.album-title-input input:focus {
+  border-color: #ff8fa3;
+  box-shadow: 0 0 0 2px rgba(255, 143, 163, 0.2);
+}
+
+/* 写真プレビュー */
+.album-preview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 0 16px 20px;
+}
+
+/* 写真 */
+.preview-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  display: block;
+}
+
+/* 作成ボタン */
+.create-album-button {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: calc(100% - 32px);
+  max-width: 400px;
+
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+
+  background: #ff8fa3;
+  color: white;
+
+  font-size: 16px;
+  font-weight: bold;
+
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+  transition: background 0.2s ease;
+}
+
+.create-album-button:hover {
+  background: #ff7b91;
+}
+
+.create-album-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ===== レスポンシブ ===== */
+@media (max-width: 480px) {
+  .album-preview {
+    gap: 6px;
+    padding: 0 12px 16px;
+  }
+
+  .preview-image {
+    border-radius: 8px;
+  }
+
+  .create-album-button {
+    font-size: 15px;
+    padding: 12px;
+    bottom: 80px;
+  }
+}

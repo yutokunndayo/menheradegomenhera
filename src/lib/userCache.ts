@@ -1,18 +1,23 @@
 // ===== userCache.ts =====
 import { supabase } from "./supabase";
 
-const CACHE_KEY = "user_profile_cache";
+// キャッシュキーにユーザーIDを含める → 別アカウントでのキャッシュ混在を防ぐ
+const CACHE_PREFIX = "user_profile_cache_";
 
 interface UserProfile {
     id: string;
     name: string;
-    gender: boolean; // false=彼氏, true=彼女
+    gender: boolean;
     partner: string | null;
 }
 
-function readCache(): UserProfile | null {
+function getCacheKey(userId: string) {
+    return `${CACHE_PREFIX}${userId}`;
+}
+
+function readCache(userId: string): UserProfile | null {
     try {
-        const raw = sessionStorage.getItem(CACHE_KEY);
+        const raw = sessionStorage.getItem(getCacheKey(userId));
         return raw ? JSON.parse(raw) : null;
     } catch {
         return null;
@@ -20,31 +25,50 @@ function readCache(): UserProfile | null {
 }
 
 function writeCache(profile: UserProfile) {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(profile));
+    sessionStorage.setItem(getCacheKey(profile.id), JSON.stringify(profile));
 }
 
 // ===== 同期でgenderを読む（初期値のチラつき防止） =====
-// useState の初期値に渡すことで、非同期待ちなしに正しいテーマが表示される
 export function getCachedGender(): "boyfriend" | "girlfriend" | null {
-    const cached = readCache();
-    if (!cached) return null;
-    return cached.gender === false ? "boyfriend" : "girlfriend";
+    // 全キャッシュエントリを走査して現在ログイン中のユーザーを探す
+    for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (!key?.startsWith(CACHE_PREFIX)) continue;
+        try {
+            const raw = sessionStorage.getItem(key);
+            if (!raw) continue;
+            const profile: UserProfile = JSON.parse(raw);
+            return profile.gender === false ? "boyfriend" : "girlfriend";
+        } catch {
+            continue;
+        }
+    }
+    return null;
 }
 
 // ログアウト時に呼ぶ
 export function clearUserCache() {
-    sessionStorage.removeItem(CACHE_KEY);
+    // 全ユーザーのキャッシュを削除
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key?.startsWith(CACHE_PREFIX)) keysToRemove.push(key);
+    }
+    keysToRemove.forEach(k => sessionStorage.removeItem(k));
     sessionStorage.removeItem("partner_guard_ok");
 }
 
 // プロフィール取得（キャッシュ優先・なければSupabaseから取得）
 export async function getCachedProfile(): Promise<UserProfile | null> {
-    const cached = readCache();
-    if (cached) return cached;
-
+    // まず現在のユーザーIDを取得
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
+    // ユーザーID付きキャッシュを確認
+    const cached = readCache(user.id);
+    if (cached) return cached;
+
+    // キャッシュなし → Supabaseから取得
     const { data: profile } = await supabase
         .from("profiles")
         .select("id, name, gender, partner")

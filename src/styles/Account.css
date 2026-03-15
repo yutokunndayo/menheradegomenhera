@@ -25,13 +25,20 @@
   transition: opacity 0.2s;
 }
 
+.username {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 20px;
+  text-align: center;
+}
+
 .avatar-change-btn:hover {
   opacity: 0.7;
 }
 
 /* ユーザー情報リスト */
 .account-info-list {
-  margin: 0 16px;
   background: white;
   border-radius: 14px;
   overflow: hidden;
@@ -112,4 +119,43 @@
   .info-value {
     max-width: 130px;
   }
+}
+
+/* ===== Account.cssの末尾に追記 ===== */
+
+/* アバターボタン — icon-wrapperの中に入れてdefault-iconと同じ位置に表示 */
+.account-avatar-btn {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  display: block;
+}
+
+.account-avatar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* 編集バッジ（右下） */
+.account-avatar-edit-badge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #f5317f;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ヒントテキスト */
+.account-avatar-hint {
+  font-size: 12px;
+  color: #aaa;
+  margin: 4px 0 0;
 }

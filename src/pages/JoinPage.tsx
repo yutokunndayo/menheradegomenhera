@@ -11,7 +11,7 @@ function JoinPage() {
   const ran = useRef(false);
 
   const fromId = params.get("from");
-  const [status, setStatus] = useState<"loading" | "success" | "error" | "already">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error" | "already" | "unauthenticated">("loading");
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
@@ -29,7 +29,7 @@ function JoinPage() {
 
         if (!user) {
           sessionStorage.setItem("pendingJoin", `/join?from=${fromId}`);
-          navigate("/Auth", { replace: true });
+          setStatus("unauthenticated");
           return;
         }
 
@@ -87,6 +87,21 @@ function JoinPage() {
             <>
               <div className="join-spinner" />
               <p className="join-status-text">接続中...</p>
+            </>
+          )}
+
+          {status === "unauthenticated" && (
+            <>
+              <div className="join-icon join-icon--error">!</div>
+              <p className="join-status-text">ログインが必要です</p>
+              <p className="join-status-sub">ログイン後に招待への参加を続けられます</p>
+              <button
+                className="btn-primary"
+                onClick={() => navigate("/login")}
+                style={{ marginTop: 16 }}
+              >
+                ログインへ
+              </button>
             </>
           )}
 

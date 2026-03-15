@@ -134,8 +134,8 @@ function EventDetail() {
     const isEditMode  = !!editId;
 
     const [myGender,    setMyGender]    = useState<MyGender | null>(getCachedGender);
-    const [myId,        setMyId]        = useState<string | null>(null);
-    const [partnerId,   setPartnerId]   = useState<string | null>(null);
+    const [_myId,        setMyId]        = useState<string | null>(null);
+    const [_partnerId,   setPartnerId]   = useState<string | null>(null);
     const [myName,      setMyName]      = useState("自分");
     const [partnerName, setPartnerName] = useState("パートナー");
 

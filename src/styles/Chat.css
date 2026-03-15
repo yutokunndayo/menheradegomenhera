@@ -38,12 +38,22 @@
 .chat-wrapper {
     display: flex;
     flex-direction: column;
-    min-height: 100dvh;
+    height: 100dvh;
+    /* min-height→height: ビューポートに収める */
+    overflow: hidden;
+    /* wrapper自体はスクロールしない */
     background: var(--white);
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
 
 /* ===== ヘッダーは AppHeader コンポーネント（appheader.css）で管理 ===== */
+/* チャット画面ではヘッダーを上部に固定する */
+.chat-wrapper .appheader,
+.chat-wrapper .appheader-scallop {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
 
 /* ===== メッセージエリア ===== */
 .chat-messages {
@@ -164,7 +174,7 @@
 /* 彼女のバブル → 右上に絆創膏 */
 .deco-top-right {
     top: -6px;
-    right: -5px;
+    right: 4px;
 }
 
 /* 彼氏のバブル → 右下にハート */

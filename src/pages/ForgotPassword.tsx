@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import AuthHeader from "../components/AuthHeader";
-import "../styles/login.css";
+import "../styles/Login.css";
 
 function ForgotPassword() {
     const navigate = useNavigate();

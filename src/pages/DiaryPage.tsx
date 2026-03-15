@@ -10,7 +10,7 @@ import sadImage    from "../assets/sad.png";
 import angryImage  from "../assets/angry.png";
 import normalImage from "../assets/normal.png";
 import funImage    from "../assets/fun.png";
-import "../styles/diary.css";
+import "../styles/Diary.css";
 
 const EMOTIONS = [
     { id: 0, name: "しんどい", image: angryImage,  color: "#b0bec5" },

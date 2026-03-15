@@ -4,8 +4,8 @@ import { supabase } from "../lib/supabase";
 import AuthHeader from "../components/AuthHeader";
 import { HiOutlineClipboard, HiOutlineCheckCircle } from "react-icons/hi2";
 import QRCode from "qrcode";
-import "../styles/login.css";
-import "../styles/invite.css";
+import "../styles/Login.css";
+import "../styles/Invite.css";
 
 function InvitePage() {
     const navigate = useNavigate();

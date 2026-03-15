@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { getAfterLoginDest } from "../lib/authRedirect";
 import AuthHeader from "../components/AuthHeader";
-import "../styles/login.css";
+import "../styles/Login.css";
 
 function Login() {
   const navigate = useNavigate();

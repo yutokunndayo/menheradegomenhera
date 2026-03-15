@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/login.css";
+import "../styles/Login.css";
 import iconLogo from "../assets/icon.png";
 interface TitlePageProps {
     // hideTimer=true のとき自動遷移しない（PartnerGuardのローディング用）

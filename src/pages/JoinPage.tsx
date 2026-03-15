@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import AuthHeader from "../components/AuthHeader";
-import "../styles/login.css";
-import "../styles/invite.css";
+import "../styles/Login.css";
+import "../styles/Invite.css";
 
 function JoinPage() {
   const navigate = useNavigate();

@@ -26,7 +26,7 @@ function TitlePage({ hideTimer = false }: TitlePageProps) {
 
             <div className="title-content">
                 <img src={iconLogo} alt="アイコン" width="120" height="120" style={{ borderRadius: "50%" }} />
-                <p className="title-appname">FamLink</p>
+                <p className="title-appname">KoiNavi</p>
             </div>
         </div>
     );

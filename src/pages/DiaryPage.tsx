@@ -56,7 +56,7 @@ function DiaryPage() {
     const navigate = useNavigate();
     const [myGender, setMyGender]       = useState<MyGender>(getCachedGender() ?? "boyfriend");
     const [myId,     setMyId]           = useState<string | null>(null);
-    const [partnerId, setPartnerId]     = useState<string | null>(null);
+    const [_partnerId, setPartnerId]     = useState<string | null>(null);
     const [genderReady, setGenderReady] = useState<boolean>(getCachedGender() !== null);
     const [selectedIndex, setSelectedIndex] = useState<EmotionId>(2);
     const [comment,  setComment]        = useState("ふつう");

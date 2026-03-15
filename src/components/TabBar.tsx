@@ -10,7 +10,7 @@ import "./tabbar.css";
 
 const tabs = [
     { path: "/home", label: "ホーム", Icon: HiOutlineHome },
-    { path: "/example", label: "画像", Icon: HiOutlinePhoto },
+    { path: "/album", label: "画像", Icon: HiOutlinePhoto },
     { path: "/chat", label: "", Icon: HiChatBubbleOvalLeftEllipsis, isCenter: true },
     { path: "/calendar", label: "カレンダー", Icon: HiOutlineCalendarDays },
     { path: "/diary", label: "メモ", Icon: HiOutlineClipboardDocumentList },

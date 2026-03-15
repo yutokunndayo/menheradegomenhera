@@ -25,27 +25,29 @@ type MyGender  = "boyfriend" | "girlfriend";
 
 const WEEK_LABELS = ["月", "火", "水", "木", "金", "土", "日"];
 
-// ===== 折れ線グラフ =====
 function LineGraph({ myScores, partnerScores, myGender }: {
     myScores: number[]; partnerScores: number[]; myGender: MyGender;
 }) {
     const W = 300, H = 64, PAD_X = 0, PAD_Y = 6;
-    const n = myScores.length;
-    const toY = (s: number) => H - PAD_Y - (s / 4) * (H - PAD_Y * 2);
-    const toX = (i: number) => PAD_X + (i / (n - 1)) * (W - PAD_X * 2);
-    const toPath = (scores: number[]) =>
-        scores.map((s, i) => `${i === 0 ? "M" : "L"} ${toX(i)} ${toY(s)}`).join(" ");
     const myColor   = myGender === "boyfriend" ? "#4dd0e1" : "#f5317f";
     const pareColor = myGender === "boyfriend" ? "#f5317f" : "#4dd0e1";
+    const myValid      = myScores.length >= 2;
+    const partnerValid = partnerScores.length >= 2;
+    if (!myValid && !partnerValid) {
+        return (
+            <svg className="diary-graph-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+                <text x={W / 2} y={H / 2 + 5} textAnchor="middle" fontSize="11" fill="#bbb">データがまだありません</text>
+            </svg>
+        );
+    }
+    const toY = (s: number) => H - PAD_Y - (s / 4) * (H - PAD_Y * 2);
+    const toX = (i: number, len: number) => len <= 1 ? W / 2 : PAD_X + (i / (len - 1)) * (W - PAD_X * 2);
+    const toPath = (scores: number[]) => scores.map((s, i) => `${i === 0 ? "M" : "L"} ${toX(i, scores.length)} ${toY(s)}`).join(" ");
     return (
         <svg className="diary-graph-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-            {[0,1,2,3,4].map(v => (
-                <line key={v} x1={0} y1={toY(v)} x2={W} y2={toY(v)} stroke="#f0d0d8" strokeWidth="0.5" strokeDasharray="3,3" />
-            ))}
-            <path d={toPath(partnerScores)} fill="none" stroke={pareColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            <path d={toPath(myScores)}      fill="none" stroke={myColor}   strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            {myScores.map((s, i)      => <circle key={`m${i}`} cx={toX(i)} cy={toY(s)} r="3" fill={myColor}   />)}
-            {partnerScores.map((s, i) => <circle key={`p${i}`} cx={toX(i)} cy={toY(s)} r="3" fill={pareColor} />)}
+            {[0,1,2,3,4].map(v => <line key={v} x1={0} y1={toY(v)} x2={W} y2={toY(v)} stroke="#f0d0d8" strokeWidth="0.5" strokeDasharray="3,3" />)}
+            {partnerValid && (<><path d={toPath(partnerScores)} fill="none" stroke={pareColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />{partnerScores.map((s,i)=><circle key={`p${i}`} cx={toX(i,partnerScores.length)} cy={toY(s)} r="3" fill={pareColor}/>)}</>)}
+            {myValid && (<><path d={toPath(myScores)} fill="none" stroke={myColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />{myScores.map((s,i)=><circle key={`m${i}`} cx={toX(i,myScores.length)} cy={toY(s)} r="3" fill={myColor}/>)}</>)}
         </svg>
     );
 }
@@ -55,13 +57,12 @@ function DiaryPage() {
     const [myGender, setMyGender]       = useState<MyGender>(getCachedGender() ?? "boyfriend");
     const [myId,     setMyId]           = useState<string | null>(null);
     const [partnerId, setPartnerId]     = useState<string | null>(null);
-    // キャッシュがない場合のみローディングを表示
     const [genderReady, setGenderReady] = useState<boolean>(getCachedGender() !== null);
     const [selectedIndex, setSelectedIndex] = useState<EmotionId>(2);
     const [comment,  setComment]        = useState("ふつう");
     const [isSent,   setIsSent]         = useState(false);
-    const [myScores,      setMyScores]      = useState<number[]>([2,1,3,2,4,3,2]);
-    const [partnerScores, setPartnerScores] = useState<number[]>([3,2,1,3,2,4,3]);
+    const [myScores,      setMyScores]      = useState<number[]>([]);
+    const [partnerScores, setPartnerScores] = useState<number[]>([]);
 
     useEffect(() => {
         const init = async () => {
@@ -72,54 +73,46 @@ function DiaryPage() {
             if (profile.partner) setPartnerId(profile.partner);
             setGenderReady(true);
 
-            // ===== 今日の記録を読み込んで初期値にセット =====
-            // タイムゾーン問題を避けるためローカル日付でフィルタ
-            const now   = new Date();
-            const ymd   = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
-            const from  = `${ymd}T00:00:00`;
-            const to    = `${ymd}T23:59:59`;
+            const now  = new Date();
+            const ymd  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+            const from = `${ymd}T00:00:00`;
+            const to   = `${ymd}T23:59:59`;
 
-            const { data: todayLog } = await supabase
+            const { data: todayLog, error: todayError } = await supabase
                 .from("diary_entries")
                 .select("emotion, text")
                 .eq("user_id", profile.id)
                 .gte("created_at", from)
                 .lte("created_at", to)
-                .single();
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
 
-            if (todayLog) {
-                // 今日すでに送信済み → その値を初期表示
+            if (todayError) {
+                console.error("%c[Diary] 今日のログ取得エラー", "color:red;font-weight:bold",
+                    "\ncode:", todayError.code,
+                    "\nmessage:", todayError.message,
+                    "\ndetails:", todayError.details,
+                    "\nhint:", todayError.hint
+                );
+            } else if (todayLog) {
                 setSelectedIndex(todayLog.emotion as EmotionId);
                 setComment(todayLog.text ?? EMOTIONS[todayLog.emotion].name);
             }
 
-            // ===== 過去7日のスコアを取得 =====
             const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-            // 自分のスコア
             const { data: myLogs } = await supabase
-                .from("diary_entries")
-                .select("emotion, created_at")
-                .eq("user_id", profile.id)
-                .gte("created_at", since)
+                .from("diary_entries").select("emotion, created_at")
+                .eq("user_id", profile.id).gte("created_at", since)
                 .order("created_at", { ascending: true });
+            if (myLogs && myLogs.length > 0) setMyScores(myLogs.slice(-7).map(l => l.emotion));
 
-            if (myLogs && myLogs.length > 0) {
-                setMyScores(myLogs.slice(-7).map(l => l.emotion));
-            }
-
-            // パートナーのスコア
             if (profile?.partner) {
                 const { data: pLogs } = await supabase
-                    .from("diary_entries")
-                    .select("emotion, created_at")
-                    .eq("user_id", profile.partner)
-                    .gte("created_at", since)
+                    .from("diary_entries").select("emotion, created_at")
+                    .eq("user_id", profile.partner).gte("created_at", since)
                     .order("created_at", { ascending: true });
-
-                if (pLogs && pLogs.length > 0) {
-                    setPartnerScores(pLogs.slice(-7).map(l => l.emotion));
-                }
+                if (pLogs && pLogs.length > 0) setPartnerScores(pLogs.slice(-7).map(l => l.emotion));
             }
         };
         init();
@@ -130,41 +123,95 @@ function DiaryPage() {
         setSelectedIndex(idx);
         setIsSent(false);
     };
-
     const handleSliderEnd = (e: React.PointerEvent<HTMLInputElement>) => {
         setComment(EMOTIONS[parseInt((e.target as HTMLInputElement).value)].name);
     };
 
     const handleSubmit = async () => {
-        if (!myId) return;
+        if (!myId) {
+            console.error("%c[Diary] myId が null — ログインしていない可能性", "color:red;font-weight:bold");
+            return;
+        }
+
         try {
-            // ローカル日付でフィルタ（タイムゾーンズレ防止）
+            // ===== Step1: 認証状態を確認 =====
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError || !user) {
+                console.error("%c[Diary] 認証エラー — ログインが切れている可能性", "color:red;font-weight:bold", authError);
+                return;
+            }
+            console.log("%c[Diary] 認証OK userId:", "color:#4caf50;font-weight:bold", user.id, "myId:", myId);
+
+            // ===== Step2: 今日の既存レコードを確認 =====
             const now  = new Date();
             const ymd  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
             const from = `${ymd}T00:00:00`;
             const to   = `${ymd}T23:59:59`;
 
-            const { data: existing } = await supabase
+            console.log("%c[Diary] 既存レコード確認中...", "color:#4dd0e1;font-weight:bold", { myId, from, to });
+
+            const { data: existing, error: selectError } = await supabase
                 .from("diary_entries")
                 .select("id")
                 .eq("user_id", myId)
                 .gte("created_at", from)
                 .lte("created_at", to)
-                .single();
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (selectError) {
+                console.error("%c[Diary] SELECT エラー", "color:red;font-weight:bold",
+                    "\ncode:", selectError.code,
+                    "\nmessage:", selectError.message,
+                    "\ndetails:", selectError.details,
+                    "\nhint:", selectError.hint
+                );
+                return;
+            }
+
+            console.log("%c[Diary] 既存レコード:", "color:#4dd0e1;font-weight:bold", existing);
 
             if (existing) {
-                // 今日分を上書き更新
-                const { error } = await supabase
+                // ===== Step3a: UPDATE =====
+                console.log("%c[Diary] UPDATE 実行 id:", "color:#4dd0e1;font-weight:bold", existing.id,
+                    "emotion:", selectedIndex, "text:", comment.trim() || null);
+
+                const { error: updateError } = await supabase
                     .from("diary_entries")
                     .update({ emotion: selectedIndex, text: comment.trim() || null })
                     .eq("id", existing.id);
-                if (error) throw error;
+
+                if (updateError) {
+                    console.error("%c[Diary] UPDATE エラー 403の原因はここ", "color:red;font-weight:bold",
+                        "\ncode:", updateError.code,
+                        "\nmessage:", updateError.message,
+                        "\ndetails:", updateError.details,
+                        "\nhint:", updateError.hint
+                    );
+                    throw updateError;
+                }
+                console.log("%c[Diary] UPDATE 成功 ✅", "color:#4caf50;font-weight:bold");
+
             } else {
-                // 新規作成
-                const { error } = await supabase
+                // ===== Step3b: INSERT =====
+                console.log("%c[Diary] INSERT 実行 emotion:", "color:#4dd0e1;font-weight:bold",
+                    selectedIndex, "text:", comment.trim() || null, "user_id:", myId);
+
+                const { error: insertError } = await supabase
                     .from("diary_entries")
                     .insert({ user_id: myId, emotion: selectedIndex, text: comment.trim() || null });
-                if (error) throw error;
+
+                if (insertError) {
+                    console.error("%c[Diary] INSERT エラー 403の原因はここ", "color:red;font-weight:bold",
+                        "\ncode:", insertError.code,
+                        "\nmessage:", insertError.message,
+                        "\ndetails:", insertError.details,
+                        "\nhint:", insertError.hint
+                    );
+                    throw insertError;
+                }
+                console.log("%c[Diary] INSERT 成功 ✅", "color:#4caf50;font-weight:bold");
             }
 
             setIsSent(true);
@@ -172,8 +219,9 @@ function DiaryPage() {
                 setIsSent(false);
                 setComment(EMOTIONS[selectedIndex].name);
             }, 3000);
+
         } catch (e) {
-            console.error("送信エラー:", e);
+            console.error("%c[Diary] 送信エラー（詳細）", "color:red;font-weight:bold", e);
         }
     };
 
@@ -189,11 +237,9 @@ function DiaryPage() {
             <div className="diary-emotion-area">
                 <div className="diary-emotion-row">
                     {EMOTIONS.map((em, index) => (
-                        <div
-                            key={em.id}
+                        <div key={em.id}
                             className={`diary-emotion-item ${index === selectedIndex ? "selected" : ""}`}
-                            onClick={() => { setSelectedIndex(index as EmotionId); setComment(em.name); setIsSent(false); }}
-                        >
+                            onClick={() => { setSelectedIndex(index as EmotionId); setComment(em.name); setIsSent(false); }}>
                             <img src={em.image} alt={em.name} className="diary-emotion-img" />
                         </div>
                     ))}

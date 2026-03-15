@@ -17,6 +17,8 @@ function JoinPage() {
     const [status, setStatus] = useState<"loading" | "success" | "error" | "already">("loading");
     const [errorMsg, setErrorMsg] = useState("");
 
+    console.log("招待元ID:", fromId);
+
     useEffect(() => {
         if (ran.current) return;
         ran.current = true;
@@ -60,6 +62,8 @@ function JoinPage() {
                     .select("id")
                     .eq("id", fromId)
                     .single();
+
+                console.log("招待者プロフィール:", fromProfile);
 
                 if (!fromProfile) {
                     setErrorMsg("招待者が見つかりません");

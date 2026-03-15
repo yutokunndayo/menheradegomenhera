@@ -1,33 +1,61 @@
-// ページ遷移をするためのフック
 import { useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { supabase } from "../lib/supabase"
 
-// 画像ファイルの読み込み
+// 画像
 import accountIcon from "../assets/registration-information.png"
 import logoutIcon from "../assets/logout.png"
 import deleteIcon from "../assets/account-delete.png"
 
-// ヘッダーコンポーネント
+// コンポーネント
 import HomePageHeader from "../components/HomePageHeader"
-
-// タブバーコンポーネント
 import TabBar from "../components/TabBar"
 
-// CSSファイルの読み込み
+// CSS
 import "../styles/HomePage.css"
 
-
-// ホーム画面コンポーネント
 export default function HomePage() {
 
-  // ページ遷移に使う関数
   const navigate = useNavigate()
+
+  // ユーザー名
+  const [username, setUsername] = useState("")
+
+  useEffect(() => {
+
+    const getUserName = async () => {
+
+      // ログインユーザー取得
+      const { data: userData } = await supabase.auth.getUser()
+
+      if (!userData.user) return
+
+      // usersテーブルから display_name 取得
+      const { data, error } = await supabase
+        .from("users")
+        .select("display_name")
+        .eq("id", userData.user.id)
+        .single()
+
+      if (error) {
+        console.error(error)
+        return
+      }
+
+      setUsername(data.display_name)
+
+    }
+
+    getUserName()
+
+  }, [])
 
   return (
 
     <div className="page">
 
-      {/* ===== ヘッダー（コンポーネント化）===== */}
-      <HomePageHeader username="彼女ちゃん" />
+      {/* ===== ヘッダー ===== */}
+      <HomePageHeader username={username} />
 
       {/* ===== メニュー ===== */}
       <div className="menu">
@@ -56,7 +84,10 @@ export default function HomePage() {
 
         {/* アカウント削除 */}
         <div className="menu-item">
-          <button className="menu-button">
+          <button
+            onClick={() => navigate("/delete-account")}
+            className="menu-button"
+          >
             <img src={deleteIcon} className="menu-icon" />
           </button>
           <p className="menu-text delete">アカウントの削除</p>

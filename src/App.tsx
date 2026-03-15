@@ -29,6 +29,7 @@ import {
   AlbumDetail,
   DiaryCalendar,
   DiaryDetail,
+  DeleteAccountModal
 } from './types/index';
 
 function App() {
@@ -79,8 +80,11 @@ function App() {
             {/* ログアウトモーダル画面 */}
             <Route path='/logout' element={<LogoutModalPage />} />
 
-            {/* アルバムの新規作成画面 */}
-            <Route path="/album-new-create" element={<AlbumNewCreate />} />
+            {/* アカウント削除モーダル */}
+            <Route path='/delete-account' element={<DeleteAccountModal />} />
+
+          {/* アルバムの新規作成画面 */}
+          <Route path="/album-new-create" element={<AlbumNewCreate />} />.
 
             <Route path="/album-edit" element={<AlbumEdit />} />
 

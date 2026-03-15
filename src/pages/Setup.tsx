@@ -48,9 +48,9 @@ function Setup() {
             let avatarUrl: string | null = null;
             if (iconFile) {
                 const ext = iconFile.name.split(".").pop();
-                const filePath = `avatars/${user.id}.${ext}`;
+                const filePath = `images/${user.id}.${ext}`;
                 const { error: uploadError } = await supabase.storage
-                    .from("avatars")
+                    .from("images")
                     .upload(filePath, iconFile, { upsert: true });
                 if (uploadError) throw uploadError;
                 const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);

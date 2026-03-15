@@ -1,22 +1,12 @@
-import { useState } from "react"
 import decor from "../assets/decor.png"
 import "./HomePageHeader.css"
 
 type Props = {
   username: string
+  icon?: string | null
 }
 
-export default function HomePageHeader({ username }: Props) {
-
-  const [icon, setIcon] = useState<string | null>(null)
-
-  const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-
-    if (file) {
-      setIcon(URL.createObjectURL(file))
-    }
-  }
+export default function HomePageHeader({ username, icon }: Props) {
 
   return (
     <div>
@@ -30,20 +20,31 @@ export default function HomePageHeader({ username }: Props) {
       {/* プロフィール */}
       <div className="profile">
 
-        <label className="icon-label">
+        {/* アイコン */}
+        <div className="icon-wrapper">
 
-          <input
-            type="file"
-            className="icon-input"
-            onChange={handleIconChange}
-          />
+          {icon ? (
+            <img
+              src={icon}
+              className="icon"
+            />
+          ) : (
+            <div className="default-icon">
 
-          <img
-            src={icon ?? "https://placehold.jp/150x150.png"}
-            className="icon"
-          />
+              <svg viewBox="0 0 24 24" fill="none" width="60" height="60">
+                <circle cx="12" cy="8" r="4" stroke="white" strokeWidth="1.8" />
+                <path
+                  d="M4 20C4 16.69 7.58 14 12 14C16.42 14 20 16.69 20 20"
+                  stroke="white"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
 
-        </label>
+            </div>
+          )}
+
+        </div>
 
         <h2 className="username">
           {username}

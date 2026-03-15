@@ -4,186 +4,240 @@ import TabBar from "../components/TabBar";
 import AppHeader from "../components/AppHeader";
 import { FiSend } from "react-icons/fi";
 import { FiUser } from "react-icons/fi";
-
-// ===== 装飾画像 import =====
-// 彼女のメッセージ右上: 絆創膏
 import bandageImage from "../assets/bandage.png";
-// 彼氏のメッセージ右下: ハート
 import chatHeartImage from "../assets/chat-heart.png";
-
 import "../styles/Chat.css";
 
 // ===== 型定義 =====
 interface Message {
     id: string;
-    sender: "me" | "partner";
+    sender: string;    // UUID（自分 or パートナー）
     text: string;
     time: string;
+    isMe: boolean;     // 自分が送ったかどうか
 }
 
-// "boyfriend" = 自分が彼氏 → 相手は必ず彼女
-// "girlfriend" = 自分が彼女 → 相手は必ず彼氏
 type MyGender = "boyfriend" | "girlfriend";
 
-// ===== 性別ごとのスタイル設定 =====
+// ===== 性別テーマ =====
 const GENDER_THEME: Record<MyGender, {
     myBubbleClass: string;
     partnerBubbleClass: string;
-    // 装飾画像と配置クラス
-    // 彼女のバブル → 右上に絆創膏
-    // 彼氏のバブル → 右下にハート
     myDecoImage: string | null;
     partnerDecoImage: string | null;
-    myDecoClass: string;        // CSS位置クラス
-    partnerDecoClass: string;   // CSS位置クラス
+    myDecoClass: string;
+    partnerDecoClass: string;
 }> = {
-    // 自分が彼氏のテーマ
     boyfriend: {
         myBubbleClass: "bubble-me-boyfriend",
         partnerBubbleClass: "bubble-partner-girlfriend",
-        // 自分（彼氏）→ ハートを右下
         myDecoImage: chatHeartImage,
         myDecoClass: "deco-bottom-right",
-        // パートナー（彼女）→ 絆創膏を右上
         partnerDecoImage: bandageImage,
         partnerDecoClass: "deco-top-right",
     },
-    // 自分が彼女のテーマ
     girlfriend: {
         myBubbleClass: "bubble-me-girlfriend",
         partnerBubbleClass: "bubble-partner-boyfriend",
-        // 自分（彼女）→ 絆創膏を右上
         myDecoImage: bandageImage,
         myDecoClass: "deco-top-right",
-        // パートナー（彼氏）→ ハートを右下
         partnerDecoImage: chatHeartImage,
         partnerDecoClass: "deco-bottom-right",
     },
 };
 
-// ===== ダミーメッセージ（DBに繋いだら差し替え） =====
-const dummyMessages: Message[] = [
-    { id: "1", sender: "partner", text: "会いたい", time: "10:00" },
-    { id: "2", sender: "me", text: "俺もだよ\n早く会いたい", time: "10:01" },
-    { id: "3", sender: "partner", text: "最近返信遅くない？", time: "10:05" },
-    { id: "4", sender: "partner", text: "他の子と遊んだりしてないよね", time: "10:05" },
-    { id: "5", sender: "partner", text: "ねえ、なにしてるの", time: "10:10" },
-    { id: "6", sender: "partner", text: "なんで見てくれないの", time: "10:10" },
-    { id: "7", sender: "partner", text: "わざと返してないよね", time: "10:11" },
-    { id: "8", sender: "partner", text: "そういうところほんと無理", time: "10:11" },
-];
+// ===== DB行をMessageに変換 =====
+function rowToMessage(row: Record<string, string>, myId: string): Message {
+    const d = new Date(row.send_at);   // created_at → send_at
+    const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    return {
+        id: String(row.uid),           // id → uid（int8なのでstringに変換）
+        sender: row.sender,
+        text: row.text,
+        time,
+        isMe: row.sender === myId,
+    };
+}
 
 function Chat() {
-    const [messages, setMessages] = useState<Message[]>(dummyMessages);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
-    const [partnerName, setPartnerName] = useState("彼女ちゃん");
+    const [partnerName, setPartnerName] = useState("パートナー");
     const [partnerIcon, setPartnerIcon] = useState<string | null>(null);
     const [isFocused, setIsFocused] = useState(false);
     const [myGender, setMyGender] = useState<MyGender>("boyfriend");
+    const [myId, setMyId] = useState<string | null>(null);
+    const [partnerId, setPartnerId] = useState<string | null>(null);
+    const [sending, setSending] = useState(false);
 
-    const theme = GENDER_THEME[myGender];
     const bottomRef = useRef<HTMLDivElement>(null);
+    const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
+    // ===== 最下部へ自動スクロール =====
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
+    // ===== プロフィール取得 + 過去メッセージ読み込み + リアルタイム購読 =====
     useEffect(() => {
-        const fetchProfile = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+        let isMounted = true;
 
+        const init = async () => {
+            // 1. ログインユーザー取得
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user || !isMounted) return;
+
+            setMyId(user.id);
+
+            // 2. 自分のプロフィール取得
             const { data: myProfile } = await supabase
                 .from("profiles")
                 .select("name, gender, partner, avatar")
                 .eq("id", user.id)
                 .single();
+            if (!myProfile || !isMounted) return;
 
-            if (!myProfile) return;
-
-            // gender は Setup.tsx で保存した "boyfriend" / "girlfriend" が入ってくる
-            // この1行でテーマ全体（自分・相手の両方のバブル色・装飾）が切り替わる
+            // genderはSetupで true=彼女 / false=彼氏 で保存
             setMyGender(myProfile.gender === true ? "girlfriend" : "boyfriend");
-            // ── Step2: パートナーのプロフィールを取得 ──
-            // myProfile.partner が自分のDBに入っている相手のUUID
-            // そのUUIDで相手の name / avatar を取得する
-            if (myProfile.partner) {
-                const { data: partnerProfile } = await supabase
-                    .from("profiles")
-                    .select("name, avatar")
-                    .eq("id", myProfile.partner)
-                    .single();
 
-                if (partnerProfile) {
-                    setPartnerName(partnerProfile.name ?? "彼女ちゃん");
-                    if (partnerProfile.avatar) {
-                        const { data: urlData } = supabase.storage
-                            .from("avatars")
-                            .getPublicUrl(partnerProfile.avatar);
-                        setPartnerIcon(urlData.publicUrl);
-                    }
+            const pId = myProfile.partner;
+            if (!pId) return;
+            setPartnerId(pId);
+
+            // 3. パートナーのプロフィール取得
+            const { data: partnerProfile } = await supabase
+                .from("profiles")
+                .select("name, avatar")
+                .eq("id", pId)
+                .single();
+
+            if (partnerProfile && isMounted) {
+                setPartnerName(partnerProfile.name ?? "パートナー");
+                if (partnerProfile.avatar) {
+                    const { data: urlData } = supabase.storage
+                        .from("avatars")
+                        .getPublicUrl(partnerProfile.avatar);
+                    setPartnerIcon(urlData.publicUrl);
                 }
             }
+
+            // 4. 過去メッセージを取得（自分とパートナーのチャットのみ、is_memory=false）
+            const { data: rows } = await supabase
+                .from("messages")
+                .select("uid, sender, text, send_at")   // id→uid, created_at→send_at
+                .eq("is_memory", false)
+                .in("sender", [user.id, pId])
+                .order("send_at", { ascending: true })  // created_at→send_at
+                .limit(100);
+
+            if (rows && isMounted) {
+                setMessages(rows.map(r => rowToMessage(r, user.id)));
+            }
+
+            // 5. リアルタイム購読（パートナーの新着メッセージを即時受信）
+            channelRef.current = supabase
+                .channel(`chat-${[user.id, pId].sort().join("-")}`)  // ユニークなチャンネル名
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "INSERT",
+                        schema: "public",
+                        table: "messages",
+                        // パートナーが送ったメッセージだけを受信
+                        filter: `sender=eq.${pId}`,
+                    },
+                    (payload) => {
+                        if (!isMounted) return;
+                        const newMsg = rowToMessage(
+                            payload.new as Record<string, string>,
+                            user.id
+                        );
+                        setMessages(prev => {
+                            // uid で重複チェック
+                            if (prev.find(m => m.id === newMsg.id)) return prev;
+                            return [...prev, newMsg];
+                        });
+                    }
+                )
+                .subscribe();
         };
-        fetchProfile();
+
+        init();
+
+        // クリーンアップ（画面離脱時にリアルタイム購読を解除）
+        return () => {
+            isMounted = false;
+            if (channelRef.current) {
+                supabase.removeChannel(channelRef.current);
+                channelRef.current = null;
+            }
+        };
     }, []);
 
+    // ===== 送信処理 =====
     const handleSend = async () => {
         const text = input.trim();
-        if (!text) return;
+        if (!text || !myId || sending) return;
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const newMsg: Message = {
-            id: Date.now().toString(),
-            sender: "me",
-            text,
-            time: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
-        };
-        setMessages((prev) => [...prev, newMsg]);
+        setSending(true);
         setInput("");
 
-        const { error } = await supabase.from("messages").insert({
+        // 楽観的UI: 送信前に即座に画面に追加
+        const tempId = `temp-${Date.now()}`;
+        const optimisticMsg: Message = {
+            id: tempId,
+            sender: myId,
             text,
-            sender: user.id,
+            time: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
+            isMe: true,
+        };
+        setMessages(prev => [...prev, optimisticMsg]);
+
+        // DBに保存
+        const { data, error } = await supabase.from("messages").insert({
+            sender: myId,
+            text,
+            send_at: new Date().toISOString(),  // send_at を明示的にセット
             is_memory: false,
-        });
-        if (error) console.error("メッセージ保存エラー:", error.message);
+        }).select("uid, sender, text, send_at").single();
+
+        setSending(false);
+
+        if (error) {
+            console.error("送信エラー:", error.message);
+            // 失敗したら楽観的UIを取り消す
+            setMessages(prev => prev.filter(m => m.id !== tempId));
+            setInput(text); // 入力欄に戻す
+            return;
+        }
+
+        if (data) {
+            // 仮IDを本物のDBのIDに差し替える
+            setMessages(prev =>
+                prev.map(m => m.id === tempId ? rowToMessage(data, myId) : m)
+            );
+        }
     };
+
+    const theme = GENDER_THEME[myGender];
 
     return (
         <div className="chat-wrapper">
-
             <AppHeader variant="chat" name={partnerName} icon={partnerIcon} />
 
             <div className="chat-messages">
                 {messages.map((msg, i) => {
-                    const isPartner = msg.sender === "partner";
+                    const isPartner = !msg.isMe;
+                    const showIcon = isPartner && (i === 0 || messages[i - 1].isMe);
 
-                    const showIcon =
-                        isPartner && (i === 0 || messages[i - 1].sender !== "partner");
-
-                    const bubbleClass = isPartner
-                        ? theme.partnerBubbleClass
-                        : theme.myBubbleClass;
-
-                    // ===== 装飾画像と位置の決定 =====
-                    // 彼女のバブル → bandage（右上）
-                    // 彼氏のバブル → chat-heart（右下）
-                    const decoImage = isPartner
-                        ? theme.partnerDecoImage
-                        : theme.myDecoImage;
-                    const decoClass = isPartner
-                        ? theme.partnerDecoClass
-                        : theme.myDecoClass;
+                    const bubbleClass = isPartner ? theme.partnerBubbleClass : theme.myBubbleClass;
+                    const decoImage = isPartner ? theme.partnerDecoImage : theme.myDecoImage;
+                    const decoClass = isPartner ? theme.partnerDecoClass : theme.myDecoClass;
 
                     return (
-                        <div
-                            key={msg.id}
-                            className={`chat-row ${isPartner ? "row-partner" : "row-me"}`}
-                        >
-                            {/* パートナーのアイコン領域 */}
+                        <div key={msg.id} className={`chat-row ${isPartner ? "row-partner" : "row-me"}`}>
+
+                            {/* パートナーアイコン */}
                             {isPartner && (
                                 <div className="chat-row-icon">
                                     {showIcon && (
@@ -198,26 +252,18 @@ function Chat() {
                                 </div>
                             )}
 
-                            {/* バブル本体 + 装飾画像 */}
+                            {/* バブル本体 + 装飾 */}
                             <div className="chat-bubble-wrap">
                                 <div className={`chat-bubble ${bubbleClass}`}>
-                                    {msg.text.split("\n").map((line, j) => (
+                                    {msg.text.split("\n").map((line, j, arr) => (
                                         <span key={j}>
                                             {line}
-                                            {j < msg.text.split("\n").length - 1 && <br />}
+                                            {j < arr.length - 1 && <br />}
                                         </span>
                                     ))}
                                 </div>
-
-                                {/* ===== 装飾画像 =====
-                                    decoClass で右上（deco-top-right）か右下（deco-bottom-right）かを切り替える
-                                    画像が null の場合は表示しない */}
                                 {decoImage && (
-                                    <img
-                                        src={decoImage}
-                                        alt=""
-                                        className={`bubble-deco ${decoClass}`}
-                                    />
+                                    <img src={decoImage} alt="" className={`bubble-deco ${decoClass}`} />
                                 )}
                             </div>
                         </div>
@@ -227,6 +273,7 @@ function Chat() {
                 <div ref={bottomRef} />
             </div>
 
+            {/* 入力バー */}
             <div className="chat-input-bar">
                 <input
                     className="chat-input"
@@ -241,7 +288,7 @@ function Chat() {
                 <button
                     className="chat-send-btn"
                     onClick={handleSend}
-                    disabled={!input.trim()}
+                    disabled={!input.trim() || sending}
                     aria-label="送信"
                 >
                     <FiSend size={18} color="white" strokeWidth={2} />

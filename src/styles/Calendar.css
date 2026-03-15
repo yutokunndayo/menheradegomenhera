@@ -28,7 +28,8 @@
     --cal-accent-bg: #fff5f8;
     --cal-toggle-on: #f5317f;
     --cal-date-bg: #fce4ec;
-    --cal-sat: #f5317f;
+    --cal-sat: #4dd0e1;
+    /* 土曜=水色（テーマに関わらず固定） */
     --cal-sun: #ef5350;
 }
 
@@ -364,6 +365,15 @@
     color: var(--cal-text-sub);
     padding: 4px 0;
     font-weight: 600;
+}
+
+/* 土曜=水色固定・日曜=赤固定 */
+.mini-cal-weekday.sat {
+    color: #4dd0e1;
+}
+
+.mini-cal-weekday.sun {
+    color: #ef5350;
 }
 
 .mini-cal-day {

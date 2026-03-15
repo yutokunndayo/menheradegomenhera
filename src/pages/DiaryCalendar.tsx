@@ -1,42 +1,20 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { getCachedProfile, getCachedGender } from "../lib/userCache";
 import AppHeader from "../components/AppHeader";
 import TabBar from "../components/TabBar";
+import TitlePage from "./TitlePage";
 import "../styles/diary.css";
 
-// ===== 感情カラー =====
-// index 0=しんどい 1=かなしい 2=ふつう 3=うれしい 4=たのしい
 const EMOTION_COLORS = ["#FFB39E", "#AFE7FF", "#A5EAB0", "#FFDFA8", "#E1A5EA"];
 
 type MyGender = "boyfriend" | "girlfriend";
 
-// ===== 日記エントリ型 =====
 interface DiaryEntry {
     date: string;
     myEmotion: number | null;
     partnerEmotion: number | null;
-    myText: string;
-    partnerText: string;
-}
-
-// ===== ダミーデータ（DB接続後は削除） =====
-function buildDummyEntries(year: number, month: number): DiaryEntry[] {
-    const entries: DiaryEntry[] = [];
-    const days = new Date(year, month + 1, 0).getDate();
-    for (let d = 1; d <= days; d++) {
-        if (Math.random() > 0.5) {
-            const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-            entries.push({
-                date: dateStr,
-                myEmotion: Math.floor(Math.random() * 5),
-                partnerEmotion: Math.random() > 0.3 ? Math.floor(Math.random() * 5) : null,
-                myText: "今日はこんな感じ",
-                partnerText: "なんか色々あった",
-            });
-        }
-    }
-    return entries;
 }
 
 const WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"];
@@ -57,45 +35,82 @@ function buildCalDays(year: number, month: number): Date[] {
 
 function DiaryCalendar() {
     const navigate = useNavigate();
-    const today = new Date();
-    const [year, setYear] = useState(today.getFullYear());
-    const [month, setMonth] = useState(today.getMonth());
-    const [myGender, setMyGender] = useState<MyGender>("boyfriend");
-    const [entries, setEntries] = useState<DiaryEntry[]>([]);
+    const today    = new Date();
+    const [year,      setYear]      = useState(today.getFullYear());
+    const [month,     setMonth]     = useState(today.getMonth());
+    const [myGender,    setMyGender]    = useState<MyGender>(getCachedGender() ?? "boyfriend");
+    const [myId,        setMyId]        = useState<string | null>(null);
+    const [partnerId,   setPartnerId]   = useState<string | null>(null);
+    const [genderReady, setGenderReady] = useState<boolean>(getCachedGender() !== null);
+    const [entries,   setEntries]   = useState<DiaryEntry[]>([]);
 
     const days = buildCalDays(year, month);
 
-    // 凡例の色: 自分の性別で決まる
-    // 彼氏 → 自分=水色、彼女=ピンク
-    // 彼女 → 自分=ピンク、彼氏=水色
-    const myColor = myGender === "boyfriend" ? "#4dd0e1" : "#f5317f";
-    const pareColor = myGender === "boyfriend" ? "#f5317f" : "#4dd0e1";
+    const myColor      = myGender === "boyfriend" ? "#4dd0e1" : "#f5317f";
+    const pareColor    = myGender === "boyfriend" ? "#f5317f" : "#4dd0e1";
     const partnerLabel = myGender === "boyfriend" ? "彼女（下）" : "彼氏（下）";
 
+    // ===== プロフィール取得（キャッシュ優先） =====
     useEffect(() => {
-        const fetchData = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { data } = await supabase
-                .from("profiles").select("gender").eq("id", user.id).single();
-            if (data?.gender) setMyGender(data.gender as MyGender);
-
-            // ダミーデータをセット（DB接続後は下のコメントを解除）
-            setEntries(buildDummyEntries(year, month));
-
-            // ===== DB接続後はここを解除してダミーを削除 =====
-            // const from = new Date(year, month, 1).toISOString();
-            // const to   = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
-            // const { data: logs } = await supabase
-            //   .from("メッセージストレージ")
-            //   .select("*")
-            //   .eq("isMemory", true)
-            //   .gte("sendAt", from)
-            //   .lte("sendAt", to);
-            // if (logs) { /* entriesToMapに変換してsetEntries */ }
+        const fetchProfile = async () => {
+            const profile = await getCachedProfile();
+            if (!profile) return;
+            setMyId(profile.id);
+            setMyGender(profile.gender === false ? "boyfriend" : "girlfriend");
+            if (profile.partner) setPartnerId(profile.partner);
+            setGenderReady(true);
         };
-        fetchData();
-    }, [year, month]);
+        fetchProfile();
+    }, []);
+
+    // ===== 月が変わるたびに日記を取得 =====
+    useEffect(() => {
+        if (!myId) return;
+
+        const fetchEntries = async () => {
+            const from = new Date(year, month, 1).toISOString();
+            const to   = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+
+            // 自分の日記
+            const { data: myLogs } = await supabase
+                .from("diary_entries")
+                .select("emotion, created_at")
+                .eq("user_id", myId)
+                .gte("created_at", from)
+                .lte("created_at", to);
+
+            // パートナーの日記
+            let pLogs: { emotion: number; created_at: string }[] = [];
+            if (partnerId) {
+                const { data } = await supabase
+                    .from("diary_entries")
+                    .select("emotion, created_at")
+                    .eq("user_id", partnerId)
+                    .gte("created_at", from)
+                    .lte("created_at", to);
+                pLogs = data ?? [];
+            }
+
+            // 日付をキーにしてマージ
+            const map: Record<string, DiaryEntry> = {};
+
+            (myLogs ?? []).forEach(log => {
+                const date = log.created_at.slice(0, 10);
+                if (!map[date]) map[date] = { date, myEmotion: null, partnerEmotion: null };
+                map[date].myEmotion = log.emotion;
+            });
+
+            pLogs.forEach(log => {
+                const date = log.created_at.slice(0, 10);
+                if (!map[date]) map[date] = { date, myEmotion: null, partnerEmotion: null };
+                map[date].partnerEmotion = log.emotion;
+            });
+
+            setEntries(Object.values(map));
+        };
+
+        fetchEntries();
+    }, [myId, partnerId, year, month]);
 
     const prevMonth = () => {
         if (month === 0) { setYear(y => y - 1); setMonth(11); }
@@ -106,8 +121,9 @@ function DiaryCalendar() {
         else setMonth(m => m + 1);
     };
 
-    const getEntry = (d: Date) =>
-        entries.find(e => e.date === toDateStr(d)) ?? null;
+    const getEntry = (d: Date) => entries.find(e => e.date === toDateStr(d)) ?? null;
+
+    if (!genderReady) return <TitlePage hideTimer />;
 
     return (
         <div className="diary-wrapper">
@@ -118,8 +134,6 @@ function DiaryCalendar() {
                 onNext={nextMonth}
             />
 
-            {/* 凡例 — 上段=自分（myColor）、下段=パートナー（pareColor） */}
-            {/* 彼氏なら自分=水色・彼女=ピンク、彼女なら自分=ピンク・彼氏=水色 */}
             <div className="dcal-legend">
                 <div className="legend-item">
                     <div className="legend-dot" style={{ background: myColor }} />
@@ -131,59 +145,45 @@ function DiaryCalendar() {
                 </div>
             </div>
 
-            {/* 曜日ヘッダー */}
             <div className="dcal-weekdays">
                 {WEEKDAYS.map((d, i) => (
                     <div key={d} className={`dcal-weekday ${i === 5 ? "sat" : i === 6 ? "sun" : ""}`}>{d}</div>
                 ))}
             </div>
 
-            {/* 日付グリッド */}
             <div className="dcal-grid">
                 {days.map((d, i) => {
                     const isOther = d.getMonth() !== month;
                     const isToday = toDateStr(d) === toDateStr(today);
-                    const dow = (d.getDay() + 6) % 7;
-                    const entry = getEntry(d);
+                    const dow     = (d.getDay() + 6) % 7;
+                    const entry   = getEntry(d);
 
                     return (
                         <div
                             key={i}
                             className={[
                                 "dcal-day",
-                                isOther ? "other-month" : "",
-                                isToday ? "today" : "",
+                                isOther  ? "other-month" : "",
+                                isToday  ? "today"       : "",
                                 dow === 5 ? "sat" : dow === 6 ? "sun" : "",
                             ].join(" ")}
                             onClick={() => !isOther && navigate(`/diary-detail?date=${toDateStr(d)}`)}
                         >
                             <span className="dcal-day-num">{d.getDate()}</span>
 
-                            {/* 感情ドット（上=自分、下=パートナー） */}
-                            {/* 色は感情ごとのEMOTION_COLORS（凡例の色とは別） */}
                             {!isOther && entry && (
                                 <div className="dcal-dot-rows">
-                                    {/* 上段: 自分の感情色 */}
                                     <div className="dcal-dot-row">
-                                        <div
-                                            className="dcal-dot"
-                                            style={{
-                                                background: entry.myEmotion !== null
-                                                    ? EMOTION_COLORS[entry.myEmotion]
-                                                    : "transparent",
-                                            }}
-                                        />
+                                        <div className="dcal-dot" style={{
+                                            background: entry.myEmotion !== null
+                                                ? EMOTION_COLORS[entry.myEmotion] : "transparent",
+                                        }} />
                                     </div>
-                                    {/* 下段: パートナーの感情色 */}
                                     <div className="dcal-dot-row">
-                                        <div
-                                            className="dcal-dot"
-                                            style={{
-                                                background: entry.partnerEmotion !== null
-                                                    ? EMOTION_COLORS[entry.partnerEmotion]
-                                                    : "transparent",
-                                            }}
-                                        />
+                                        <div className="dcal-dot" style={{
+                                            background: entry.partnerEmotion !== null
+                                                ? EMOTION_COLORS[entry.partnerEmotion] : "transparent",
+                                        }} />
                                     </div>
                                 </div>
                             )}

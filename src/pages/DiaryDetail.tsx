@@ -8,7 +8,7 @@ import sadImage    from "../assets/sad.png";
 import angryImage  from "../assets/angry.png";
 import normalImage from "../assets/normal.png";
 import funImage    from "../assets/fun.png";
-import "../styles/diary.css";
+import "../styles/Diary.css";
 
 const EMOTION_IMAGES = [angryImage, sadImage, normalImage, happyImage, funImage];
 const EMOTION_NAMES  = ["しんどい", "かなしい", "ふつう", "うれしい", "たのしい"];

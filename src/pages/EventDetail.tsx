@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { HiOutlineClock, HiOutlinePencil, HiOutlineUsers } from "react-icons/hi2";
 import { getCachedGender, getCachedProfile } from "../lib/userCache";
 import TitlePage from "./TitlePage";
-import "../styles/calendar.css";
+import "../styles/Calendar.css";
 
 type MyGender  = "boyfriend" | "girlfriend";
 type PickerOpen = "none" | "start-date" | "start-time" | "end-date" | "end-time";

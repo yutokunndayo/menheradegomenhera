@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import "../styles/login.css";
+import "../styles/Login.css";
 import iconImage from "../assets/icon.png";
 
 interface AuthHeaderProps {

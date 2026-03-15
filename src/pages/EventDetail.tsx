@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { HiOutlineClock, HiOutlinePencil, HiOutlineUsers } from "react-icons/hi2";
 import { getCachedGender, getCachedProfile } from "../lib/userCache";
+import TitlePage from "./TitlePage";
 import "../styles/calendar.css";
 
 type MyGender  = "boyfriend" | "girlfriend";
@@ -277,9 +278,9 @@ function EventDetail() {
         setPicker("none");
     };
 
-    const miniCalDays = buildMiniCalDays(calYear, calMonth);
+    // gender取得前はタイトル画面（チラつき・真っ白防止）
+    if (!myGender) return <TitlePage hideTimer />;
 
-    if (!myGender) return null;
     // パートナーの予定として追加する場合はテーマを反転
     const currentTheme: MyGender = isPartnerOwner
         ? (myGender === "boyfriend" ? "girlfriend" : "boyfriend")

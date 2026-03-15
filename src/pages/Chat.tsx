@@ -174,7 +174,7 @@ ${conversationText}`;
                 .eq("id", pId)
                 .maybeSingle();
 
-            if (partnerProfile && isMounted) {
+            if (partnerProfile) {
                 setPartnerName(partnerProfile.name ?? "パートナー");
                 if (partnerProfile.avatar) {
                     const { data: urlData } = supabase.storage

@@ -1,0 +1,237 @@
+import { useState, useRef, useCallback, useEffect } from "react";
+import sageImage from "../assets/master.png";
+
+export interface SageMessage {
+    id: string;
+    text: string;
+    type: "warning" | "suggestion" | "praise" | "idle";
+}
+
+export interface SageWidgetProps {
+    message?: SageMessage | null;
+    isBoyfriend: boolean;
+}
+
+const THEME = {
+    warning: { bg: "#fff8e1", border: "#f5a623" },
+    suggestion: { bg: "#e8f4fd", border: "#4dd0e1" },
+    praise: { bg: "#e8f8e8", border: "#66bb6a" },
+    idle: { bg: "#fff5f8", border: "#f5317f" },
+};
+
+const TYPE_LABEL: Record<SageMessage["type"], string> = {
+    warning: "⚠️ 注意", suggestion: "💡 提案", praise: "✨ いいね", idle: "",
+};
+
+const DUMMY_MESSAGES: SageMessage[] = [
+    { id: "d1", text: "返信が途切れそうじゃ。一言添えて締めくくるとよいぞ", type: "warning" },
+    { id: "d2", text: "「了解」だけだと少し寂しいかもしれん。「ありがとう、助かる！」くらい添えてみるのじゃ", type: "suggestion" },
+    { id: "d3", text: "今日の返信、とてもよかったぞ。その調子じゃ！", type: "praise" },
+    { id: "d4", text: "今日も2人の関係を見守っているぞ。何かあれば相談するがよい", type: "idle" },
+];
+
+function SageWidget({ isBoyfriend, message: externalMessage }: SageWidgetProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [message, setMessage] = useState<SageMessage | null>(DUMMY_MESSAGES[0]);
+    const [hasUnread, setHasUnread] = useState(true);
+    const [isPopping, setIsPopping] = useState(false);
+    const dummyIndexRef = useRef(0);
+
+    // ===== AIからのメッセージを受け取ったら自動で吹き出し表示 =====
+    useEffect(() => {
+        if (!externalMessage) return;
+        setMessage(externalMessage);
+        setHasUnread(true);
+        setIsOpen(true);
+        setIsPopping(true);
+        setTimeout(() => setIsPopping(false), 400);
+    }, [externalMessage]);
+
+    // ===== ドラッグ用 =====
+    const [pos, setPos] = useState({
+        x: window.innerWidth - 70,
+        y: window.innerHeight - 160,
+    });
+    const dragging = useRef(false);
+    const dragOffset = useRef({ x: 0, y: 0 });
+    const didDrag = useRef(false);
+
+    const onDragStart = useCallback((clientX: number, clientY: number) => {
+        dragging.current = true;
+        didDrag.current = false;
+        dragOffset.current = { x: clientX - pos.x, y: clientY - pos.y };
+    }, [pos]);
+
+    useEffect(() => {
+        const onMouseMove = (e: MouseEvent) => {
+            if (!dragging.current) return;
+            didDrag.current = true;
+            setPos({
+                x: Math.max(0, Math.min(window.innerWidth - 54, e.clientX - dragOffset.current.x)),
+                y: Math.max(0, Math.min(window.innerHeight - 54, e.clientY - dragOffset.current.y)),
+            });
+        };
+        const onTouchMove = (e: TouchEvent) => {
+            if (!dragging.current) return;
+            didDrag.current = true;
+            const t = e.touches[0];
+            setPos({
+                x: Math.max(0, Math.min(window.innerWidth - 54, t.clientX - dragOffset.current.x)),
+                y: Math.max(0, Math.min(window.innerHeight - 54, t.clientY - dragOffset.current.y)),
+            });
+        };
+        const onEnd = () => { dragging.current = false; };
+
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("mouseup", onEnd);
+        window.addEventListener("touchmove", onTouchMove, { passive: true });
+        window.addEventListener("touchend", onEnd);
+        return () => {
+            window.removeEventListener("mousemove", onMouseMove);
+            window.removeEventListener("mouseup", onEnd);
+            window.removeEventListener("touchmove", onTouchMove);
+            window.removeEventListener("touchend", onEnd);
+        };
+    }, []);
+
+    const handleIconTap = useCallback(() => {
+        if (didDrag.current) return;
+        if (isOpen) {
+            setIsOpen(false);
+        } else {
+            dummyIndexRef.current = (dummyIndexRef.current + 1) % DUMMY_MESSAGES.length;
+            setMessage(DUMMY_MESSAGES[dummyIndexRef.current]);
+            setIsOpen(true);
+            setHasUnread(false);
+            setIsPopping(true);
+            setTimeout(() => setIsPopping(false), 400);
+        }
+    }, [isOpen]);
+
+    const handleClose = useCallback(() => {
+        setIsOpen(false);
+        setHasUnread(false);
+    }, []);
+
+    if (!isBoyfriend) return null;
+
+    const theme = THEME[message?.type ?? "idle"];
+    const bubbleBottom = window.innerHeight - pos.y + 8;
+    const bubbleRight = Math.max(8, window.innerWidth - pos.x - 54);
+
+    return (
+        <>
+            {/* 吹き出し */}
+            {isOpen && message && (
+                <div style={{
+                    position: "fixed",
+                    bottom: bubbleBottom,
+                    right: bubbleRight,
+                    zIndex: 9999,
+                    maxWidth: 230,
+                    minWidth: 150,
+                    background: theme.bg,
+                    border: `2px solid ${theme.border}`,
+                    borderRadius: 16,
+                    padding: "10px 28px 10px 12px",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                    fontFamily: "Hiragino Kaku Gothic ProN, Noto Sans JP, sans-serif",
+                    opacity: isPopping ? 0.8 : 1,
+                    transition: "opacity 0.2s",
+                }}>
+                    <button onClick={handleClose} style={{
+                        position: "absolute", top: 6, right: 8,
+                        background: "none", border: "none",
+                        fontSize: 11, color: "#aaa", cursor: "pointer",
+                    }}>✕</button>
+
+                    {message.type !== "idle" && (
+                        <div style={{
+                            display: "inline-block",
+                            fontSize: 10, fontWeight: 700, color: "white",
+                            background: theme.border,
+                            padding: "2px 8px", borderRadius: 10, marginBottom: 5,
+                        }}>
+                            {TYPE_LABEL[message.type]}
+                        </div>
+                    )}
+
+                    <p style={{
+                        fontSize: 13, lineHeight: 1.65,
+                        color: "#333", margin: 0, wordBreak: "break-all",
+                    }}>
+                        {message.text}
+                    </p>
+
+                    <div style={{
+                        position: "absolute", bottom: -11, right: 18,
+                        width: 0, height: 0,
+                        borderLeft: "8px solid transparent",
+                        borderRight: "8px solid transparent",
+                        borderTop: `11px solid ${theme.border}`,
+                    }} />
+                </div>
+            )}
+
+            {/* 仙人アイコン（枠線・背景なし） */}
+            <div
+                onMouseDown={(e) => { e.preventDefault(); onDragStart(e.clientX, e.clientY); }}
+                onTouchStart={(e) => { onDragStart(e.touches[0].clientX, e.touches[0].clientY); }}
+                onClick={handleIconTap}
+                style={{
+                    position: "fixed",
+                    left: pos.x,
+                    top: pos.y,
+                    zIndex: 9999,
+                    width: 81,
+                    height: 81,
+                    borderRadius: "50%",
+                    background: "none",       /* 背景なし */
+                    border: "none",           /* 枠線なし */
+                    boxShadow: "none",        /* 影なし */
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "grab",
+                    userSelect: "none",
+                    animation: "sage-float 3.5s ease-in-out infinite",
+                }}
+                aria-label="仙人に相談"
+            >
+                <img
+                    src={sageImage}
+                    alt="仙人"
+                    style={{
+                        width: 81,
+                        height: 81,
+                        objectFit: "contain",
+                        pointerEvents: "none",
+                        userSelect: "none",
+                        draggable: false,
+                    } as React.CSSProperties}
+                    draggable={false}
+                />
+
+                {/* 未読バッジ */}
+                {hasUnread && !isOpen && (
+                    <span style={{
+                        position: "absolute", top: 1, right: 1,
+                        width: 13, height: 13,
+                        background: "#f44336",
+                        borderRadius: "50%",
+                        border: "2px solid white",
+                    }} />
+                )}
+            </div>
+
+            <style>{`
+                @keyframes sage-float {
+                    0%, 100% { transform: translateY(0px); }
+                    50%       { transform: translateY(-6px); }
+                }
+            `}</style>
+        </>
+    );
+}
+
+export default SageWidget;

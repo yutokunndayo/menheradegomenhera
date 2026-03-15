@@ -32,8 +32,8 @@ export default function HomePage() {
 
       // usersテーブルから display_name 取得
       const { data, error } = await supabase
-        .from("users")
-        .select("display_name")
+        .from("profiles")
+        .select("name")
         .eq("id", userData.user.id)
         .single()
 
@@ -42,7 +42,7 @@ export default function HomePage() {
         return
       }
 
-      setUsername(data.display_name)
+      setUsername(data.name || "")
 
     }
 

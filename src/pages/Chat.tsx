@@ -72,8 +72,9 @@ function ChatInner() {
     const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
     const myGenderRef = useRef<MyGender>("boyfriend");
     const partnerIdRef = useRef<string | null>(null);
-    const myIdRef = useRef<string | null>(null); // 彼女自身のIDを保持
+    const myIdRef = useRef<string | null>(null);
     const messagesRef = useRef<Message[]>([]);
+    const initializedRef = useRef(false); // 二重初期化防止
 
     useEffect(() => {
         messagesRef.current = messages;
@@ -83,10 +84,9 @@ function ChatInner() {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // ===== 彼女側: AIアドバイスを生成して彼女自身のIDでDBに保存 =====
     const generateAndSaveAdvice = useCallback(async (
         currentMessages: Message[],
-        myUserId: string, // 彼女自身のID
+        myUserId: string,
     ) => {
         try {
             const recentMessages = currentMessages.slice(-10);
@@ -113,13 +113,9 @@ function ChatInner() {
 チャット履歴:
 ${conversationText}`;
 
-            console.log("[Advice] Gemini呼び出し中...");
             const adviceText = await generateChatResponse(prompt);
-            console.log("[Advice] Gemini結果:", adviceText);
-
             if (!adviceText || adviceText.trim() === "") return;
 
-            // 彼女自身のIDで保存（RLSがauth.uid() = user_idなので通る）
             const { error } = await supabase
                 .from("chat_emotion_contexts")
                 .insert({
@@ -142,6 +138,10 @@ ${conversationText}`;
         let isMounted = true;
 
         const init = async (userId: string) => {
+            // 二重初期化を防ぐ
+            if (initializedRef.current) return;
+            initializedRef.current = true;
+
             setMyId(userId);
             myIdRef.current = userId;
 
@@ -153,6 +153,7 @@ ${conversationText}`;
 
             if (profileError) {
                 console.error("[Chat] profiles取得エラー:", profileError.message);
+                initializedRef.current = false;
                 return;
             }
             if (!myProfile || !isMounted) return;
@@ -195,8 +196,15 @@ ${conversationText}`;
                 setMessages(rows.map(r => rowToMessage(r, userId)));
             }
 
+            // リアルタイム購読 — 既存チャンネルがあれば先に削除
+            if (channelRef.current) {
+                await supabase.removeChannel(channelRef.current);
+                channelRef.current = null;
+            }
+
+            const channelName = `chat-${[userId, pId].sort().join("-")}`;
             channelRef.current = supabase
-                .channel(`chat-${[userId, pId].sort().join("-")}`)
+                .channel(channelName)
                 .on(
                     "postgres_changes",
                     {
@@ -217,28 +225,29 @@ ${conversationText}`;
                         });
                     }
                 )
-                .subscribe();
+                .subscribe((status) => {
+                    console.log("[Chat] Realtime status:", status);
+                });
         };
+
+        // getSession で即時取得を優先、なければ onAuthStateChange で待つ
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user && isMounted) {
+                init(session.user.id);
+            }
+        });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                if (session?.user && isMounted) {
+                if (session?.user && isMounted && !initializedRef.current) {
                     await init(session.user.id);
-                    subscription.unsubscribe();
                 }
             }
         );
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user && isMounted) {
-                init(session.user.id);
-                subscription.unsubscribe();
-            }
-        });
-
         return () => {
-            subscription.unsubscribe();
             isMounted = false;
+            subscription.unsubscribe();
             if (channelRef.current) {
                 supabase.removeChannel(channelRef.current);
                 channelRef.current = null;

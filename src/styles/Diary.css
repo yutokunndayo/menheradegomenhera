@@ -12,38 +12,41 @@
 }
 
 /* ===== ラッパー ===== */
+/* スクロール禁止 — 全コンテンツを100dvhに収める */
 .diary-wrapper {
-    min-height: 100dvh;
+    height: 100dvh;
     background: var(--white);
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    padding-bottom: 100px;
-    /* タブバー分 */
+    overflow: hidden;
 }
 
 /* ===== 感情選択エリア ===== */
+/* flex:1 で余った縦スペースをここが吸収する → 上下に自然な余白ができる */
 .diary-emotion-area {
-    padding: 32px 16px 16px;
+    padding: 0 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    justify-content: center;
+    gap: 28px;
+    /* 16px → 28px: 絵文字とスライダーの間隔 */
+    flex: 1;
+    min-height: 0;
+    padding-bottom: 16px;
 }
 
 /* 感情ボール列 */
 .diary-emotion-row {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    gap: 16px;
-    /* 8px → 16px に広げる */
+    gap: 12px;
     width: 100%;
-    padding: 8px 0;
 }
 
-/* 感情ボール */
+/* 感情ボール（旧emotion-ball — 未使用だが念のため残す） */
 .emotion-ball {
     border-radius: 50%;
     cursor: pointer;
@@ -54,11 +57,6 @@
     flex-shrink: 0;
     border: none;
     padding: 0;
-    position: relative;
-}
-
-.emotion-ball:hover {
-    transform: scale(1.08);
 }
 
 .emotion-ball.selected {
@@ -66,52 +64,43 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
-/* 感情ラベル（ピンクの丸っこいバッジ） */
+/* 感情ラベル */
 .diary-emotion-label {
     background: var(--pink);
     color: white;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-    padding: 8px 32px;
+    padding: 6px 28px;
     border-radius: 24px;
     margin: 0;
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
 
 /* ===== メーターエリア（非表示） ===== */
-.diary-meter-area {
-    display: none;
-}
-
-.diary-meter-track {
-    display: none;
-}
-
-.diary-meter-fill {
-    display: none;
-}
-
-.diary-meter-ticks {
-    display: none;
-}
-
+.diary-meter-area,
+.diary-meter-track,
+.diary-meter-fill,
+.diary-meter-ticks,
 .diary-meter-tick {
     display: none;
 }
 
 /* ===== 入力エリア ===== */
 .diary-input-area {
-    margin: 8px 16px 0;
+    margin: 0 16px;
+    margin-top: 6px;
+    /* 上の余白を追加 */
     background: var(--pink-bg);
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: 14px;
+    padding: 10px 14px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .diary-input-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--pink);
     margin: 0;
@@ -121,38 +110,46 @@
     background: transparent;
     border: none;
     outline: none;
-    font-size: 15px;
+    font-size: 14px;
     color: var(--text-main);
     resize: none;
-    min-height: 72px;
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-    line-height: 1.6;
+    line-height: 1.5;
 }
 
 .diary-input::placeholder {
     color: #e8a0b8;
 }
 
+/* ===== 送信ボタンラッパー ===== */
+.diary-submit-wrap {
+    padding: 10px 16px 0;
+    /* 上の余白を増やす */
+    flex-shrink: 0;
+}
+
 .diary-submit-btn {
-    align-self: flex-end;
+    width: 100%;
+    height: 46px;
     background: var(--pink);
     color: white;
     border: none;
-    border-radius: 20px;
-    padding: 8px 20px;
-    font-size: 14px;
+    border-radius: 24px;
+    font-size: 16px;
     font-weight: 700;
     cursor: pointer;
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-    transition: background 0.2s, transform 0.1s;
+    transition: all 0.2s;
 }
 
-.diary-submit-btn:hover {
+.diary-submit-btn:hover:not(.sent) {
     background: #d41f6a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 49, 127, 0.3);
 }
 
-.diary-submit-btn:active {
-    transform: scale(0.96);
+.diary-submit-btn.sent {
+    background: #4caf50;
 }
 
 .diary-submit-btn:disabled {
@@ -161,22 +158,28 @@
 }
 
 /* ===== グラフエリア ===== */
+/* 固定高さで小さく表示 */
 .diary-graph-area {
-    margin: 20px 16px 0;
+    margin: 10px 16px 80px;
+    /* 上の余白を追加 */
     background: var(--pink-bg);
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: 14px;
+    padding: 10px 14px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .diary-graph-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 6px;
+    flex-shrink: 0;
 }
 
 .diary-graph-title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-main);
     margin: 0;
@@ -184,27 +187,36 @@
 
 .diary-graph-icon {
     color: var(--pink);
+    font-size: 13px;
+}
+
+.diary-graph-arrow {
+    margin-left: auto;
+    font-size: 16px;
+    color: var(--pink);
 }
 
 /* グラフ凡例 */
 .diary-graph-legend {
     display: flex;
-    gap: 16px;
-    margin-bottom: 8px;
+    gap: 14px;
+    margin-bottom: 6px;
+    flex-shrink: 0;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
+    gap: 5px;
+    font-size: 11px;
     color: var(--text-sub);
 }
 
 .legend-dot {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
+    flex-shrink: 0;
 }
 
 .legend-dot--pink {
@@ -215,18 +227,20 @@
     background: var(--cyan);
 }
 
-/* グラフ本体（SVG） */
+/* グラフSVG */
 .diary-graph-svg {
     width: 100%;
-    overflow: visible;
+    height: 64px;
+    overflow: hidden;
 }
 
-/* X軸ラベル */
+/* X軸ラベル — PAD_X=0なので padding不要 */
 .diary-graph-xlabels {
     display: flex;
     justify-content: space-between;
-    padding: 0 4px;
-    margin-top: 4px;
+    padding: 0;
+    margin-top: 2px;
+    flex-shrink: 0;
 }
 
 .diary-graph-xlabel {
@@ -237,8 +251,7 @@
 /* ===== スライダー ===== */
 .diary-slider-wrap {
     width: 100%;
-    position: relative;
-    padding: 0 8px;
+    padding: 0 4px;
 }
 
 .diary-slider {
@@ -253,14 +266,14 @@
 
 .diary-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 26px;
-    height: 26px;
-    background: #f5317f;
+    width: 24px;
+    height: 24px;
+    background: var(--pink);
     border-radius: 50%;
     border: 3px solid white;
     box-shadow: 0 2px 8px rgba(245, 49, 127, 0.4);
     cursor: grab;
-    margin-top: -9px;
+    margin-top: -8px;
     transition: transform 0.15s;
 }
 
@@ -269,27 +282,12 @@
 }
 
 .diary-slider::-moz-range-thumb {
-    width: 26px;
-    height: 26px;
-    background: #f5317f;
+    width: 24px;
+    height: 24px;
+    background: var(--pink);
     border-radius: 50%;
     border: 3px solid white;
     cursor: grab;
-}
-
-.diary-slider-ticks {
-    position: absolute;
-    right: 8px;
-    top: -6px;
-    display: flex;
-    gap: 4px;
-    align-items: flex-end;
-}
-
-.diary-slider-tick {
-    width: 2px;
-    background: #f0b0c8;
-    border-radius: 1px;
 }
 
 /* ===== 感情ボール（画像版） ===== */
@@ -308,78 +306,44 @@
 }
 
 .diary-emotion-img {
-    width: 52px;
-    height: 52px;
+    width: 58px;
+    /* 44px → 58px */
+    height: 58px;
     object-fit: contain;
     transition: all 0.25s ease;
 }
 
 .diary-emotion-item.selected .diary-emotion-img {
-    width: 68px;
-    height: 68px;
+    width: 76px;
+    /* 58px → 76px */
+    height: 76px;
 }
 
 /* ===== コメント入力 ===== */
 .diary-comment-input {
     width: 100%;
-    height: 46px;
-    padding: 0 16px;
+    height: 42px;
+    padding: 0 14px;
     border: 1.5px solid #f8bbd0;
-    border-radius: 24px;
-    font-size: 15px;
+    border-radius: 22px;
+    font-size: 14px;
     outline: none;
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-    color: #333333;
+    color: var(--text-main);
     background: white;
     transition: border-color 0.2s;
 }
 
 .diary-comment-input:focus {
-    border-color: #f5317f;
-}
-
-/* ===== 送信ボタンラッパー ===== */
-.diary-submit-wrap {
-    padding: 0 16px;
-    margin-top: 4px;
-}
-
-.diary-submit-btn {
-    width: 100%;
-    height: 52px;
-    background: #f5317f;
-    color: white;
-    border: none;
-    border-radius: 26px;
-    font-size: 17px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-    transition: all 0.2s;
-}
-
-.diary-submit-btn:hover:not(.sent) {
-    background: #d41f6a;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(245, 49, 127, 0.3);
-}
-
-.diary-submit-btn.sent {
-    background: #4caf50;
-}
-
-/* グラフの矢印 */
-.diary-graph-arrow {
-    margin-left: auto;
-    font-size: 18px;
-    color: #f5317f;
+    border-color: var(--pink);
 }
 
 /* ===== 感情カレンダー（DiaryCalendar） ===== */
 .dcal-legend {
     display: flex;
     gap: 16px;
-    padding: 12px 16px 4px;
+    padding: 8px 16px 4px;
+    flex-shrink: 0;
 }
 
 .dcal-weekdays {
@@ -387,6 +351,7 @@
     grid-template-columns: repeat(7, 1fr);
     padding: 0 8px;
     border-bottom: 1px solid #fce4ec;
+    flex-shrink: 0;
 }
 
 .dcal-weekday {
@@ -394,53 +359,57 @@
     font-size: 12px;
     font-weight: 600;
     color: #aaaaaa;
-    padding: 6px 0;
+    padding: 4px 0;
 }
 
 .dcal-weekday.sat {
-    color: #f5317f;
+    color: var(--pink);
 }
 
 .dcal-weekday.sun {
     color: #ef5350;
 }
 
+/* グリッド — 残り高さを全部使って縦均等配置 */
 .dcal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    padding: 4px 8px 100px;
+    grid-template-rows: repeat(6, 1fr);
+    /* 6行を均等に割り付け */
+    padding: 2px 8px 80px;
+    /* タブバー分の下余白 */
     flex: 1;
+    min-height: 0;
 }
 
 .dcal-day {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 4px 2px;
+    justify-content: flex-start;
+    padding: 4px 1px;
     cursor: pointer;
-    min-height: 64px;
-    gap: 3px;
 }
 
 .dcal-day-num {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 12px;
     color: #333333;
 }
 
 .dcal-day.today .dcal-day-num {
-    background: #f5317f;
+    background: var(--pink);
     color: white;
     font-weight: 700;
 }
 
 .dcal-day.sat:not(.today) .dcal-day-num {
-    color: #f5317f;
+    color: var(--pink);
 }
 
 .dcal-day.sun:not(.today) .dcal-day-num {
@@ -463,110 +432,17 @@
 }
 
 .dcal-emotion-img {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     object-fit: contain;
     border-radius: 50%;
 }
 
-/* ===== 日記詳細（DiaryDetail） ===== */
-/* ===== DiaryDetail ヘッダー行（EventListスタイル） ===== */
-.ddetail-header {
-    display: flex;
-    align-items: center;
-    padding: max(16px, env(safe-area-inset-top, 16px)) 16px 12px;
-    border-bottom: 1px solid #fce4ec;
-    background: white;
-}
-
-.ddetail-back-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: #f5317f;
-    font-size: 16px;
-    font-weight: 600;
-    padding: 0;
-    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-}
-
-.ddetail-body {
-    padding: 8px 16px 100px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.ddetail-card {
-    border-radius: 16px;
-    border: 2px solid;
-    overflow: hidden;
-    background: white;
-}
-
-.ddetail-card-header {
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-}
-
-.ddetail-card-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: white;
-}
-
-.ddetail-content {
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.ddetail-emotion-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.ddetail-emotion-img {
-    width: 56px;
-    height: 56px;
-    object-fit: contain;
-    border-radius: 50%;
-    /* padding削除 — 背景色のみで枠線なし */
-}
-
-.ddetail-emotion-label {
-    color: white;
-    font-size: 14px;
-    font-weight: 700;
-    padding: 6px 18px;
-    border-radius: 20px;
-}
-
-.ddetail-text {
-    font-size: 15px;
-    color: #333333;
-    line-height: 1.6;
-    margin: 0;
-}
-
-.ddetail-empty {
-    padding: 16px;
-    color: #aaaaaa;
-    font-size: 14px;
-    text-align: center;
-}
-
-/* ===== 感情カレンダー 色丸2段 ===== */
+/* 色丸2段 */
 .dcal-dot-rows {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
     align-items: center;
 }
 
@@ -576,7 +452,117 @@
 }
 
 .dcal-dot {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
+}
+
+/* ===== DiaryDetail ===== */
+.ddetail-header {
+    display: flex;
+    align-items: center;
+    padding: max(16px, env(safe-area-inset-top, 16px)) 16px 12px;
+    border-bottom: 1px solid #fce4ec;
+    background: white;
+    flex-shrink: 0;
+}
+
+.ddetail-back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--pink);
+    font-size: 16px;
+    font-weight: 600;
+    padding: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+.ddetail-body {
+    padding: 8px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.ddetail-card {
+    border-radius: 14px;
+    border: 2px solid;
+    overflow: hidden;
+    background: white;
+}
+
+.ddetail-card-header {
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+}
+
+.ddetail-card-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+}
+
+.ddetail-content {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ddetail-emotion-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ddetail-emotion-img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+.ddetail-emotion-label {
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 5px 16px;
+    border-radius: 18px;
+}
+
+.ddetail-text {
+    font-size: 14px;
+    color: var(--text-main);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.ddetail-empty {
+    padding: 12px;
+    color: #aaaaaa;
+    font-size: 13px;
+    text-align: center;
+}
+
+/* 待機中テキスト（InvitePage） */
+.invite-waiting {
+    color: var(--pink);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.invite-notice {
+    font-size: 12px;
+    color: #aaaaaa;
+    text-align: center;
+    margin: 0;
+    padding: 0 8px;
+    line-height: 1.6;
 }

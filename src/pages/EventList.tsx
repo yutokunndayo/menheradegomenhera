@@ -38,32 +38,61 @@ function EventList() {
     const [events, setEvents]     = useState<CalEvent[]>([]);
     const [loading, setLoading]   = useState(true);
 
+    // ===== プロフィール取得 =====
     useEffect(() => {
-        const fetchData = async () => {
+        const init = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
             setMyId(user.id);
-
             const { data: profile } = await supabase
                 .from("profiles").select("gender").eq("id", user.id).single();
             setMyGender(profile?.gender === false ? "boyfriend" : "girlfriend");
-
-            const from = dateStr + "T00:00:00.000Z";
-            const to   = dateStr + "T23:59:59.999Z";
-
-            const { data, error } = await supabase
-                .from("schedules")
-                .select("id, user_id, name, start_at, end_at, is_shared, all_day, memo")
-                .gte("start_at", from)
-                .lte("start_at", to)
-                .order("start_at", { ascending: true });
-
-            if (error) console.error(error.message);
-            else setEvents((data ?? []) as CalEvent[]);
-            setLoading(false);
         };
-        fetchData();
+        init();
+    }, []);
+
+    // ===== 予定取得 =====
+    const fetchEvents = async () => {
+        const from = dateStr + "T00:00:00";
+        const to   = dateStr + "T23:59:59";
+
+        const { data, error } = await supabase
+            .from("schedules")
+            .select("id, user_id, name, start_at, end_at, is_shared, all_day, memo")
+            .gte("start_at", from)
+            .lte("start_at", to)
+            .order("start_at", { ascending: true });
+
+        if (error) console.error(error.message);
+        else setEvents((data ?? []) as CalEvent[]);
+    };
+
+    // ===== 初回取得 + Realtime購読 =====
+    useEffect(() => {
+        setLoading(true);
+        fetchEvents().finally(() => setLoading(false));
+
+        // CalendarPageと同じチャンネル名にすると競合するので別名にする
+        const channel = supabase
+            .channel("schedules-changes-eventlist")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "schedules" },
+                () => {
+                    fetchEvents();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dateStr]);
+
+    // 「自分の予定」= 自分が自分のために作った OR 相手が自分のために作った
+    const isMyEvent = (ev: CalEvent) =>
+        (ev.user_id === myId && !ev.is_shared) || (ev.user_id !== myId && ev.is_shared);
 
     return (
         <div className={`cal-wrapper theme-${myGender}`}>
@@ -91,10 +120,10 @@ function EventList() {
                             key={ev.id}
                             className="event-list-item"
                             onClick={() => navigate(
-                                `/event?date=${ev.start_at.slice(0, 10)}&id=${ev.id}&isPare=${ev.user_id !== myId}`
+                                `/event?date=${ev.start_at.slice(0, 10)}&id=${ev.id}&isPare=${ev.is_shared}`
                             )}
                         >
-                            <div className={`event-list-line ${ev.user_id === myId ? "line-mine" : "line-pare"}`} />
+                            <div className={`event-list-line ${isMyEvent(ev) ? "line-mine" : "line-pare"}`} />
                             <div className="event-list-info">
                                 <p className="event-list-name">{ev.name}</p>
                                 {ev.memo && <p className="event-list-memo">{ev.memo}</p>}

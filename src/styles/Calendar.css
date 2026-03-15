@@ -51,7 +51,6 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    /* カレンダー全体がスクロール可能に */
 }
 
 /* ===== ヘッダー ===== */
@@ -113,7 +112,6 @@
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     padding: 4px 8px 100px;
-    /* タブバー分の余白を下に確保 */
     flex: 1;
 }
 
@@ -124,6 +122,9 @@
     padding: 4px 2px;
     cursor: pointer;
     min-height: 60px;
+    /* グリッドセルが内容で伸びないように制約 */
+    min-width: 0;
+    overflow: hidden;
     gap: 2px;
 }
 
@@ -137,12 +138,12 @@
     font-size: 14px;
     color: var(--cal-text);
     font-weight: 400;
+    flex-shrink: 0;
 }
 
 .cal-day.today .cal-day-num {
     background: var(--cal-accent);
     color: white;
-    /* 常に白 — 土曜・日曜でも背景が水色/ピンクなので白が正解 */
     font-weight: 700;
 }
 
@@ -159,28 +160,28 @@
     color: #dddddd;
 }
 
-/* イベントバッジ（共通ベース） */
+/* イベントバッジコンテナ */
 .cal-event-badges {
     display: flex;
     flex-direction: column;
     gap: 1px;
+    /* 親（.cal-day）の幅に収まるよう制約 */
     width: 100%;
+    min-width: 0;
+    overflow: hidden;
     padding: 0 2px;
+    box-sizing: border-box;
 }
 
 /* ===== EventDetail ===== */
 .event-wrapper {
     min-height: 100dvh;
     background: var(--cal-white);
-    /* グレー背景をなくして白に統一 */
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
     display: flex;
     flex-direction: column;
 }
 
-/* ヘッダー（キャンセル・保存） */
-/* padding-top に safe-area を使うことで
-   iPhoneのノッチ・ダイナミックアイランド・通常端末どれでも正しく表示される */
 .event-header {
     display: flex;
     align-items: center;
@@ -226,14 +227,12 @@
     box-sizing: border-box;
 }
 
-/* セクションカード — marginをなくしてボーダーだけで区切る */
+/* セクションカード */
 .event-card {
     background: var(--cal-white);
     margin: 0;
-    /* ← 隙間をなくす */
     border-top: 1px solid var(--cal-separator);
     border-bottom: none;
-    /* 次のevent-cardのborder-topと重複しないよう削除 */
 }
 
 /* 各行 */
@@ -323,7 +322,6 @@
     cursor: pointer;
 }
 
-/* 開始日行だけ下にボーダー（画像③通り） */
 .event-date-row--bordered {
     border-bottom: 1px solid var(--cal-separator);
 }
@@ -367,7 +365,6 @@
     font-weight: 600;
 }
 
-/* 土曜=水色固定・日曜=赤固定 */
 .mini-cal-weekday.sat {
     color: #4dd0e1;
 }
@@ -462,7 +459,6 @@
     color: var(--cal-text);
 }
 
-/* ドラムの選択ハイライト帯 */
 .drum-highlight {
     position: absolute;
     left: 0;
@@ -530,32 +526,21 @@
     background: #fff5f5;
 }
 
-/* ===== イベントバッジ（自分/パートナー色分け） ===== */
+/* ===== イベントバッジ ===== */
 .cal-event-badge {
     font-size: 9px;
     padding: 1px 4px;
     border-radius: 3px;
     color: white;
+    /* 幅を親に収めてはみ出さない */
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: left;
-}
-
-/* 自分の予定 → テーマ色（彼氏=水色 / 彼女=ピンク） */
-.cal-event-badge.badge-mine {
-    background: var(--cal-accent);
-}
-
-/* パートナーの予定 → 必ず反対の色 */
-/* 自分が彼氏（水色テーマ）→ パートナー（彼女）はピンク */
-.theme-boyfriend .cal-event-badge.badge-pare {
-    background: #f5317f;
-}
-
-/* 自分が彼女（ピンクテーマ）→ パートナー（彼氏）は水色 */
-.theme-girlfriend .cal-event-badge.badge-pare {
-    background: #4dd0e1;
+    display: block;
 }
 
 /* ===== EventList ===== */
@@ -592,7 +577,6 @@
     padding-left: 4px;
 }
 
-/* 右上の + ボタン（丸いピンク） */
 .event-list-add-btn {
     width: 34px;
     height: 34px;
@@ -646,7 +630,6 @@
     background: var(--cal-accent);
 }
 
-/* パートナーの予定は反対テーマの色 */
 .theme-boyfriend .event-list-line.line-pare {
     background: #f5317f;
 }

@@ -1,0 +1,115 @@
+.account-page {
+  background: #f7f7f7;
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
+
+/* 画像変更ボタンエリア */
+.account-avatar-action {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+  margin-bottom: 28px;
+}
+
+.avatar-change-btn {
+  background: none;
+  border: none;
+  color: #f5317f;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-bottom: 1px solid #f5317f;
+  letter-spacing: 0.02em;
+  transition: opacity 0.2s;
+}
+
+.avatar-change-btn:hover {
+  opacity: 0.7;
+}
+
+/* ユーザー情報リスト */
+.account-info-list {
+  margin: 0 16px;
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* 各行 */
+.account-info-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  min-height: 56px;
+}
+
+.account-info-item.clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.account-info-item.clickable:active {
+  background: #fdf2f6;
+}
+
+/* ラベル */
+.info-label {
+  font-size: 15px;
+  color: #333;
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 110px;
+}
+
+/* 右側まとめ */
+.info-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+/* 値 */
+.info-value {
+  font-size: 14px;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.info-password {
+  letter-spacing: 3px;
+  font-size: 13px;
+}
+
+/* 矢印 */
+.info-arrow {
+  font-size: 20px;
+  color: #ccc;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* 区切り線 */
+.info-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 0 20px;
+}
+
+/* レスポンシブ */
+@media (max-width: 480px) {
+  .account-info-list {
+    margin: 0 12px;
+  }
+
+  .info-value {
+    max-width: 130px;
+  }
+}

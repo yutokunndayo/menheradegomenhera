@@ -31,3 +31,5 @@ export { default as JoinPage } from '../pages/JoinPage'
 export { default as DiaryCalendar } from '../pages/DiaryCalendar'
 export { default as DiaryDetail } from '../pages/DiaryDetail'
 export { default as AlbumPage } from "../pages/AlbumPage"
+export { default as MailModify } from "../pages/MailModify"
+export { default as PasswordModify } from "../pages/PasswordModify"

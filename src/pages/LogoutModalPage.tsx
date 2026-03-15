@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom"
+import { supabase } from "../lib/supabase"
 
 import HomePageHeader from "../components/HomePageHeader"
 import TabBar from "../components/TabBar"
@@ -9,6 +10,20 @@ export default function LogoutModalPage() {
 
   const navigate = useNavigate()
 
+  // ログアウト処理
+  const handleLogout = async () => {
+
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      console.error("ログアウトエラー:", error.message)
+      return
+    }
+
+    // ログイン画面へ
+    navigate("/login")
+  }
+
   return (
 
     <div className="page">
@@ -18,7 +33,6 @@ export default function LogoutModalPage() {
 
       {/* 背景暗くする */}
       <div className="overlay"></div>
-
 
       {/* モーダル */}
       <div className="modal">
@@ -42,7 +56,7 @@ export default function LogoutModalPage() {
 
           <button
             className="ok-button"
-            onClick={() => navigate("/login")}
+            onClick={handleLogout}
           >
             OK
           </button>
@@ -50,7 +64,6 @@ export default function LogoutModalPage() {
         </div>
 
       </div>
-
 
       {/* タブバー */}
       <TabBar />

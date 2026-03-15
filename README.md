@@ -65,7 +65,7 @@ const clickAttiEvent = () => {
 0. 起動構成の作り方  
 ```bash
 // まだクローンしたことないなら
-git clone https://github.com/yutokunndayo/menheradegomenhera.git
+git clone https://github.com/yutokunndayo/KoiNavidegoKoiNavi.git
 cd クローンしたファイル名
 // すでにしてる(remoteがここになっている)なら
 git pull

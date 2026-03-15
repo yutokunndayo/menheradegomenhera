@@ -69,15 +69,11 @@
   .logo-icon-placeholder を削除して以下に差し替え
   <img src="/icon.png" alt="アイコン" width="72" height="72" style={{ borderRadius: "50%" }} />
 */
-.logo-icon-placeholder {
-    width: 72px;
-    height: 72px;
-    background: rgba(255, 255, 255, 0.25);
+
+.title-content-img {
+    width: 96px;
+    height: 96px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2.5px solid rgba(255, 255, 255, 0.6);
 }
 
 .logo-icon-text {

@@ -25,11 +25,11 @@ function JoinPage() {
             try {
                 const { data: { user } } = await supabase.auth.getUser();
 
-                // 未ログインの場合はloginへ（招待URLをリダイレクト先として保持）
+                // 未ログインの場合はAuthへ（招待URLをリダイレクト先として保持）
                 if (!user) {
                     // ログイン後に自動でこのページに戻れるようにURLを保存
                     sessionStorage.setItem("pendingJoin", `/join?from=${fromId}`);
-                    navigate("/login", { replace: true });
+                    navigate("/Auth", { replace: true });
                     return;
                 }
 

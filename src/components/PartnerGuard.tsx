@@ -2,10 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-// ===== パートナー接続チェックガード =====
-// パートナーが設定されていない場合は /invite にリダイレクトする
-// /auth, /login, /register, /setup, /invite, /join は対象外（認証・招待フロー）
-
 const UNGUARDED_PATHS = [
     "/",
     "/auth",
@@ -14,9 +10,18 @@ const UNGUARDED_PATHS = [
     "/setup",
     "/forgot-password",
     "/authCallback",
+    "/signup-callback",
     "/invite",
     "/join",
+    "/logout",
+    "/test",
+    "/demo",
+    "/album",
+    "/example",
 ];
+
+// セッション内キャッシュキー
+const CACHE_KEY = "partner_guard_ok";
 
 interface PartnerGuardProps {
     children: React.ReactNode;
@@ -25,22 +30,28 @@ interface PartnerGuardProps {
 function PartnerGuard({ children }: PartnerGuardProps) {
     const navigate = useNavigate();
     const location = useLocation();
-    const [checked, setChecked] = useState(false);
+    const [checked, setChecked] = useState(
+        // すでにキャッシュ済みなら即通す（Supabase不要）
+        () => sessionStorage.getItem(CACHE_KEY) === "1"
+    );
 
     useEffect(() => {
+        // キャッシュ済みなら何もしない
+        if (sessionStorage.getItem(CACHE_KEY) === "1") {
+            setChecked(true);
+            return;
+        }
+
+        const isUnguarded = UNGUARDED_PATHS.some(p =>
+            location.pathname === p || location.pathname.startsWith(p + "?")
+        );
+        if (isUnguarded) { setChecked(true); return; }
+
+        // ここに来るのは初回ログイン後の1回だけ
         const check = async () => {
-            // ガード対象外のパスはそのまま通す
-            const isUnguarded = UNGUARDED_PATHS.some(p =>
-                location.pathname === p || location.pathname.startsWith(p + "?")
-            );
-            if (isUnguarded) { setChecked(true); return; }
-
             const { data: { user } } = await supabase.auth.getUser();
-
-            // 未ログインはガードしない（他のリダイレクト処理に任せる）
             if (!user) { setChecked(true); return; }
 
-            // パートナーが設定されているか確認
             const { data: profile } = await supabase
                 .from("profiles")
                 .select("partner")
@@ -48,18 +59,19 @@ function PartnerGuard({ children }: PartnerGuardProps) {
                 .single();
 
             if (!profile?.partner) {
-                // パートナー未接続 → 招待画面へ強制リダイレクト
                 navigate("/invite", { replace: true });
                 return;
             }
 
+            // パートナー接続済み → キャッシュに保存（以降はSupabaseを叩かない）
+            sessionStorage.setItem(CACHE_KEY, "1");
             setChecked(true);
         };
 
         check();
-    }, [location.pathname, navigate]);
+        // location.pathnameを依存配列から外す → ページ遷移のたびに叩かない
+    }, [navigate]);
 
-    // チェック完了前はローディング表示
     if (!checked) {
         return (
             <div style={{

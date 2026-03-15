@@ -1,239 +1,212 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import {
-    HiOutlineClock,
-    HiOutlinePencilSquare,
-    HiOutlineUserGroup,
-    HiOutlineTrash,
-} from "react-icons/hi2";
+import { HiOutlineClock, HiOutlinePencil, HiOutlineUsers } from "react-icons/hi2";
+import { getCachedGender, getCachedProfile } from "../lib/userCache";
+import TitlePage from "./TitlePage";
 import "../styles/calendar.css";
 
-type MyGender = "boyfriend" | "girlfriend";
+type MyGender  = "boyfriend" | "girlfriend";
+type PickerOpen = "none" | "start-date" | "start-time" | "end-date" | "end-time";
 
-// ===== ドラムロールピッカー =====
-interface DrumPickerProps {
+const WEEKDAYS_SHORT = ["月", "火", "水", "木", "金", "土", "日"];
+const HOURS   = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
+
+// ===== スクロールドラムロール =====
+// items: 表示する選択肢配列、value: 現在選択値、onChange: 変更コールバック
+const ITEM_H = 44; // 1項目の高さ(px)
+
+function DrumRoll({ items, value, onChange, accent }: {
     items: string[];
-    selected: string;
-    onChange: (val: string) => void;
-}
-
-function DrumPicker({ items, selected, onChange }: DrumPickerProps) {
+    value: string;
+    onChange: (v: string) => void;
+    accent: string;
+}) {
     const ref = useRef<HTMLDivElement>(null);
-    const ITEM_H = 40;
+    const ignoreScroll = useRef(false);
 
+    // 選択値が変わったらスクロール位置を合わせる
     useEffect(() => {
-        const idx = items.indexOf(selected);
+        const idx = items.indexOf(value);
         if (ref.current && idx >= 0) {
+            ignoreScroll.current = true;
             ref.current.scrollTop = idx * ITEM_H;
+            setTimeout(() => { ignoreScroll.current = false; }, 100);
         }
-    }, [selected, items]);
+    }, [value, items]);
 
-    const handleScroll = () => {
-        if (!ref.current) return;
+    const handleScroll = useCallback(() => {
+        if (ignoreScroll.current || !ref.current) return;
         const idx = Math.round(ref.current.scrollTop / ITEM_H);
-        onChange(items[Math.max(0, Math.min(items.length - 1, idx))]);
-    };
+        const clamped = Math.max(0, Math.min(items.length - 1, idx));
+        if (items[clamped] !== value) onChange(items[clamped]);
+    }, [items, value, onChange]);
 
     return (
-        <div ref={ref} className="drum-col" onScroll={handleScroll}>
-            <div style={{ height: ITEM_H * 2 }} />
-            {items.map(item => (
-                <div
-                    key={item}
-                    className={`drum-item ${item === selected ? "active" : ""}`}
-                    onClick={() => onChange(item)}
-                >
-                    {item}
-                </div>
-            ))}
-            <div style={{ height: ITEM_H * 2 }} />
-        </div>
-    );
-}
-
-// ===== ミニカレンダーピッカー =====
-interface MiniCalProps {
-    selected: Date;
-    onSelect: (d: Date) => void;
-}
-
-function MiniCal({ selected, onSelect }: MiniCalProps) {
-    const [viewYear, setViewYear] = useState(selected.getFullYear());
-    const [viewMonth, setViewMonth] = useState(selected.getMonth());
-    const today = new Date();
-    const WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"];
-
-    const first = new Date(viewYear, viewMonth, 1);
-    const startOffset = (first.getDay() + 6) % 7;
-    const days: Date[] = [];
-    for (let i = -startOffset; i < 42 - startOffset; i++) {
-        days.push(new Date(viewYear, viewMonth, 1 + i));
-    }
-
-    return (
-        <div className="mini-cal">
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 8 }}>
-                <button style={{ background: "none", border: "none", cursor: "pointer", color: "var(--cal-accent)", fontSize: 18 }}
-                    onClick={() => { if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); } else setViewMonth(m => m - 1); }}>‹</button>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{viewYear}年{viewMonth + 1}月</span>
-                <button style={{ background: "none", border: "none", cursor: "pointer", color: "var(--cal-accent)", fontSize: 18 }}
-                    onClick={() => { if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); } else setViewMonth(m => m + 1); }}>›</button>
-            </div>
-            <div className="mini-cal-grid">
-                {WEEKDAYS.map((d, i) => (
-                    <div key={d} className={`mini-cal-weekday ${i === 5 ? "sat" : i === 6 ? "sun" : ""}`}>{d}</div>
+        <div style={{ position: "relative", width: 80 }}>
+            {/* 選択中ハイライト帯 */}
+            <div style={{
+                position: "absolute",
+                top: ITEM_H * 2,
+                left: 4, right: 4,
+                height: ITEM_H,
+                background: `${accent}22`,
+                borderRadius: 8,
+                pointerEvents: "none",
+                zIndex: 1,
+            }} />
+            <div
+                ref={ref}
+                onScroll={handleScroll}
+                style={{
+                    height: ITEM_H * 5,
+                    overflowY: "scroll",
+                    scrollSnapType: "y mandatory",
+                    WebkitOverflowScrolling: "touch",
+                    scrollbarWidth: "none",
+                    position: "relative",
+                    zIndex: 2,
+                }}
+            >
+                {/* 上下に2個分のパディング */}
+                <div style={{ height: ITEM_H * 2 }} />
+                {items.map(item => (
+                    <div
+                        key={item}
+                        onClick={() => onChange(item)}
+                        style={{
+                            height: ITEM_H,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            scrollSnapAlign: "center",
+                            fontSize: item === value ? 26 : 18,
+                            fontWeight: item === value ? 700 : 400,
+                            color: item === value ? "#333" : "#bbb",
+                            cursor: "pointer",
+                            transition: "all 0.15s",
+                            userSelect: "none",
+                        }}
+                    >
+                        {item}
+                    </div>
                 ))}
-                {days.map((d, i) => {
-                    const isOther = d.getMonth() !== viewMonth;
-                    const isSelected = d.toDateString() === selected.toDateString();
-                    const isToday = d.toDateString() === today.toDateString();
-                    const dow = (d.getDay() + 6) % 7;
-                    return (
-                        <button key={i}
-                            className={["mini-cal-day", isOther ? "other" : "", isSelected ? "selected" : "",
-                                isToday && !isSelected ? "today-dot" : "",
-                                !isSelected && dow === 5 ? "sat" : "", !isSelected && dow === 6 ? "sun" : ""].join(" ")}
-                            onClick={() => onSelect(d)}
-                        >{d.getDate()}</button>
-                    );
-                })}
+                <div style={{ height: ITEM_H * 2 }} />
             </div>
+            {/* スクロールバー非表示 */}
+            <style>{`div::-webkit-scrollbar{display:none}`}</style>
         </div>
     );
 }
 
-// ===== 日付フォーマット =====
-function formatDate(d: Date) {
+// ===== ミニカレンダー日付生成 =====
+function buildMiniCalDays(year: number, month: number) {
+    const first  = new Date(year, month, 1);
+    const offset = (first.getDay() + 6) % 7;
+    const days: (Date | null)[] = [];
+    for (let i = 0; i < offset; i++) days.push(null);
+    const total = new Date(year, month + 1, 0).getDate();
+    for (let d = 1; d <= total; d++) days.push(new Date(year, month, d));
+    return days;
+}
+
+function formatDateBtn(d: Date) {
     const days = ["日", "月", "火", "水", "木", "金", "土"];
     return `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`;
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
+// ===== 現在時刻を5分単位に丸める =====
+function roundToFive(d: Date): { h: string; m: string } {
+    const m = Math.ceil(d.getMinutes() / 5) * 5;
+    const h = m >= 60 ? (d.getHours() + 1) % 24 : d.getHours();
+    return {
+        h: String(h).padStart(2, "0"),
+        m: String(m >= 60 ? 0 : m).padStart(2, "0"),
+    };
+}
 
-// ===== ダミー予定（編集モードの初期値読み込み用） =====
-const DUMMY_EVENTS_FOR_EDIT = [
-    {
-        taskid: "t1", name: "バイト",
-        date: new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12, 0).toISOString(),
-        duration: new Date(new Date().getFullYear(), new Date().getMonth(), 1, 18, 0).toISOString(),
-        isPare: false, memo: ""
-    },
-    {
-        taskid: "t2", name: "デート",
-        date: new Date(new Date().getFullYear(), new Date().getMonth(), 8, 14, 0).toISOString(),
-        duration: new Date(new Date().getFullYear(), new Date().getMonth(), 8, 20, 0).toISOString(),
-        isPare: true, memo: ""
-    },
-    {
-        taskid: "t3", name: "映画",
-        date: new Date(new Date().getFullYear(), new Date().getMonth(), 15, 18, 0).toISOString(),
-        duration: new Date(new Date().getFullYear(), new Date().getMonth(), 15, 21, 0).toISOString(),
-        isPare: true, memo: ""
-    },
-    {
-        taskid: "t4", name: "ジム",
-        date: new Date(new Date().getFullYear(), new Date().getMonth(), 22, 9, 0).toISOString(),
-        duration: new Date(new Date().getFullYear(), new Date().getMonth(), 22, 11, 0).toISOString(),
-        isPare: false, memo: ""
-    },
-];
-
-// ===== メイン =====
 function EventDetail() {
-    const navigate = useNavigate();
-    const [params] = useSearchParams();
-
+    const navigate    = useNavigate();
+    const [params]    = useSearchParams();
     const initDateStr = params.get("date") ?? new Date().toISOString().slice(0, 10);
-    const initDate = new Date(initDateStr + "T12:00:00");
+    const editId      = params.get("id");
+    const isEditMode  = !!editId;
 
-    // URLに id があれば編集モード、なければ新規作成モード
-    const editTaskId = params.get("id");
-    const isEditMode = !!editTaskId;
-    // EventListから渡されるisPareの初期値
-    const initIsPare = params.get("isPare") === "true";
-
-    const [myGender, setMyGender] = useState<MyGender>("boyfriend");
-    const [myName, setMyName] = useState("自分");
+    const [myGender,    setMyGender]    = useState<MyGender | null>(getCachedGender);
+    const [myId,        setMyId]        = useState<string | null>(null);
+    const [partnerId,   setPartnerId]   = useState<string | null>(null);
+    const [myName,      setMyName]      = useState("自分");
     const [partnerName, setPartnerName] = useState("パートナー");
 
-    const [title, setTitle] = useState("");
-    const [allDay, setAllDay] = useState(false);
-    const [startDate, setStartDate] = useState(initDate);
-    const [endDate, setEndDate] = useState(new Date(initDate.getTime() + 60 * 60 * 1000));
-    const [startHour, setStartHour] = useState("12");
-    const [startMin, setStartMin] = useState("00");
-    const [endHour, setEndHour] = useState("13");
-    const [endMin, setEndMin] = useState("00");
-    const [memo, setMemo] = useState("");
-    const [isPare, setIsPare] = useState(initIsPare);
+    const [title,           setTitle]           = useState("");
+    const [memo,            setMemo]            = useState("");
+    // isPartnerOwner: trueならパートナーの予定として保存（user_idがパートナーになる）
+    const [isPartnerOwner,  setIsPartnerOwner]  = useState(false);
+    const [allDay,          setAllDay]          = useState(false);
 
-    const currentTheme: MyGender = isPare
-        ? (myGender === "boyfriend" ? "girlfriend" : "boyfriend")
-        : myGender;
+    // ===== デフォルト: 現在時刻 & 終了は+1時間 =====
+    const now       = new Date();
+    const { h: nowH, m: nowM } = roundToFive(now);
+    const endHourNum = (parseInt(nowH) + 1) % 24;
 
-    const [openPicker, setOpenPicker] = useState("none");
-    const [saving, setSaving] = useState(false);
+    const [startDate, setStartDate] = useState(new Date(initDateStr + "T00:00:00"));
+    const [endDate,   setEndDate]   = useState(new Date(initDateStr + "T00:00:00"));
+    const [startHour, setStartHour] = useState(nowH);
+    const [startMin,  setStartMin]  = useState(nowM);
+    const [endHour,   setEndHour]   = useState(String(endHourNum).padStart(2, "0"));
+    const [endMin,    setEndMin]    = useState(nowM);
 
-    // ===== プロフィール取得 + 編集モード時の既存予定読み込み =====
+    const [calYear,  setCalYear]  = useState(new Date(initDateStr).getFullYear());
+    const [calMonth, setCalMonth] = useState(new Date(initDateStr).getMonth());
+    const [picker,   setPicker]   = useState<PickerOpen>("none");
+    const [saving,   setSaving]   = useState(false);
+
+    // アクセントカラー（gender確定後に決まる）
+    const accent = myGender === "girlfriend" ? "#f5317f" : "#4dd0e1";
+
     useEffect(() => {
-        const fetch = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+        const fetchData = async () => {
+            const profile = await getCachedProfile();
+            if (!profile) return;
+            setMyId(profile.id);
+            setMyGender(profile.gender === false ? "boyfriend" : "girlfriend");
+            setMyName(profile.name);
+            setPartnerId(profile.partner);
 
-            const { data: myProfile } = await supabase
-                .from("profiles")
-                .select("name, gender, partner")
-                .eq("id", user.id)
-                .single();
-
-            if (myProfile?.gender) setMyGender(myProfile.gender as MyGender);
-            if (myProfile?.name) setMyName(myProfile.name);
-
-            if (myProfile?.partner) {
-                const { data: partnerProfile } = await supabase
-                    .from("profiles")
-                    .select("name")
-                    .eq("id", myProfile.partner)
-                    .single();
-                if (partnerProfile?.name) setPartnerName(partnerProfile.name);
+            if (profile.partner) {
+                const { data: p } = await supabase
+                    .from("profiles").select("name").eq("id", profile.partner).single();
+                if (p?.name) setPartnerName(p.name);
             }
 
-            // ===== 編集モード: 既存予定データをフォームに読み込む =====
-            if (isEditMode && editTaskId) {
-                // ダミーから検索（DB接続後は以下のSupabaseクエリに差し替える）
-                const existing = DUMMY_EVENTS_FOR_EDIT.find(e => e.taskid === editTaskId);
-
-                // ===== DB接続後はここを解除してダミーを削除する =====
-                // const { data: existing } = await supabase
-                //   .from("予定")
-                //   .select("*")
-                //   .eq("taskid", editTaskId)
-                //   .single();
-
-                if (existing) {
-                    const sd = new Date(existing.date);
-                    const ed = new Date(existing.duration);
-                    setTitle(existing.name);
-                    setStartDate(sd);
-                    setEndDate(ed);
+            if (isEditMode && editId) {
+                const { data: ev } = await supabase
+                    .from("schedules").select("*").eq("id", editId).single();
+                if (ev) {
+                    const sd = new Date(ev.start_at);
+                    const ed = new Date(ev.end_at);
+                    setTitle(ev.name);
+                    setMemo(ev.memo ?? "");
+                    // 誰の予定か: 自分のIDと一致しなければパートナーの予定
+                    setIsPartnerOwner(ev.user_id !== profile.id);
+                    setAllDay(ev.all_day ?? false);
+                    setStartDate(sd); setEndDate(ed);
                     setStartHour(String(sd.getHours()).padStart(2, "0"));
-                    setStartMin(String(sd.getMinutes()).padStart(2, "0"));
+                    const sm = MINUTES.reduce((a, b) =>
+                        Math.abs(parseInt(a) - sd.getMinutes()) <= Math.abs(parseInt(b) - sd.getMinutes()) ? a : b);
+                    setStartMin(sm);
                     setEndHour(String(ed.getHours()).padStart(2, "0"));
-                    setEndMin(String(ed.getMinutes()).padStart(2, "0"));
-                    setIsPare(existing.isPare);
-                    if (existing.memo) setMemo(existing.memo);
+                    const em = MINUTES.reduce((a, b) =>
+                        Math.abs(parseInt(a) - ed.getMinutes()) <= Math.abs(parseInt(b) - ed.getMinutes()) ? a : b);
+                    setEndMin(em);
+                    setCalYear(sd.getFullYear()); setCalMonth(sd.getMonth());
                 }
             }
         };
-        fetch();
-    }, [isEditMode, editTaskId]);
+        fetchData();
+    }, [isEditMode, editId]);
 
-    const togglePicker = (name: string) =>
-        setOpenPicker(prev => prev === name ? "none" : name);
-
-    // ===== 保存処理（新規=insert / 編集=update） =====
     const handleSave = async () => {
         if (!title.trim()) return;
         setSaving(true);
@@ -241,83 +214,90 @@ function EventDetail() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("未ログイン");
 
-            const startDt = new Date(startDate);
-            if (!allDay) startDt.setHours(parseInt(startHour), parseInt(startMin), 0, 0);
-            const endDt = new Date(endDate);
-            if (!allDay) endDt.setHours(parseInt(endHour), parseInt(endMin), 0, 0);
+            let startIso: string;
+            let endIso: string;
 
-            const payload = {
-                name: title.trim(),
-                date: startDt.toISOString(),
-                duration: endDt.toISOString(),
-                isPare,
-            };
-
-            if (isEditMode && editTaskId) {
-                // 編集モード: 既存レコードを更新
-                const { error } = await supabase
-                    .from("予定")
-                    .update(payload)
-                    .eq("taskid", editTaskId);
-                if (error) throw error;
+            if (allDay) {
+                // 終日: ローカル日付のYYYY-MM-DD形式で保存（タイムゾーンズレ防止）
+                const sy = startDate.getFullYear();
+                const sm = String(startDate.getMonth() + 1).padStart(2, "0");
+                const sd = String(startDate.getDate()).padStart(2, "0");
+                const ey = endDate.getFullYear();
+                const em = String(endDate.getMonth() + 1).padStart(2, "0");
+                const ed = String(endDate.getDate()).padStart(2, "0");
+                startIso = `${sy}-${sm}-${sd}T00:00:00`;
+                endIso   = `${ey}-${em}-${ed}T23:59:59`;
             } else {
-                // 新規作成モード: 新しいレコードを追加
-                const { error } = await supabase.from("予定").insert({
-                    id: user.id,
-                    taskid: crypto.randomUUID(),
-                    createAt: new Date().toISOString(),
-                    ...payload,
-                });
-                if (error) throw error;
+                const sd = new Date(startDate);
+                sd.setHours(parseInt(startHour), parseInt(startMin), 0, 0);
+                const ed = new Date(endDate);
+                ed.setHours(parseInt(endHour), parseInt(endMin), 0, 0);
+                startIso = sd.toISOString();
+                endIso   = ed.toISOString();
             }
 
-            // 保存後はカレンダーへ戻る
+            const payload = {
+                name:      title.trim(),
+                start_at:  startIso,
+                end_at:    endIso,
+                is_shared: false,  // is_sharedは2人共有予定フラグ（今後使う用）
+                all_day:   allDay,
+                memo:      memo.trim() || null,
+            };
+
+            // 誰の予定か: isPartnerOwner=trueならパートナーのuser_idで保存
+            const ownerId = isPartnerOwner && partnerId ? partnerId : myId ?? user.id;
+
+            if (isEditMode && editId) {
+                const { error } = await supabase.from("schedules")
+                    .update({ ...payload, user_id: ownerId }).eq("id", editId);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase.from("schedules")
+                    .insert({ ...payload, user_id: ownerId });
+                if (error) throw error;
+            }
             navigate("/calendar", { replace: true });
-        } catch (e) {
-            console.error("保存エラー:", e);
-        } finally {
-            setSaving(false);
-        }
+        } catch (e) { console.error(e); }
+        finally { setSaving(false); }
     };
 
-    // ===== 削除処理 =====
     const handleDelete = async () => {
-        const eventId = params.get("id");
-        if (!eventId) {
-            // 新規作成中に削除 → そのままキャンセル扱いでカレンダーへ
-            navigate("/calendar", { replace: true });
-            return;
-        }
-        try {
-            await supabase.from("予定").delete().eq("taskid", eventId);
-            navigate("/calendar", { replace: true });
-        } catch (e) {
-            console.error("削除エラー:", e);
-        }
+        if (!editId) { navigate(-1); return; }
+        if (!window.confirm("この予定を削除しますか？")) return;
+        await supabase.from("schedules").delete().eq("id", editId);
+        navigate("/calendar", { replace: true });
     };
+
+    const togglePicker = (p: PickerOpen) =>
+        setPicker(prev => prev === p ? "none" : p);
+
+    const selectDate = (d: Date, which: "start" | "end") => {
+        if (which === "start") { setStartDate(d); if (d > endDate) setEndDate(d); }
+        else setEndDate(d);
+        setPicker("none");
+    };
+
+    // gender取得前はタイトル画面（チラつき・真っ白防止）
+    if (!myGender) return <TitlePage hideTimer />;
+
+    // パートナーの予定として追加する場合はテーマを反転
+    const currentTheme: MyGender = isPartnerOwner
+        ? (myGender === "boyfriend" ? "girlfriend" : "boyfriend")
+        : myGender;
 
     return (
-        // currentTheme でテーマクラスを切り替える
-        // isPare を切り替えると画面全体の色がリアルタイムで変わる
         <div className={`event-wrapper theme-${currentTheme}`}>
 
-            {/* ===== ヘッダー =====
-          padding-top に safe-area-inset-top を使うことで
-          iPhone のノッチ・ダイナミックアイランドでも正しく表示される */}
+            {/* ヘッダー */}
             <div className="event-header">
-                <button className="event-cancel-btn" onClick={() => navigate("/calendar")}>
-                    キャンセル
-                </button>
-                <button
-                    className="event-save-btn"
-                    onClick={handleSave}
-                    disabled={saving || !title.trim()}
-                >
-                    {saving ? "保存中..." : "保存"}
+                <button className="event-cancel-btn" onClick={() => navigate(-1)}>キャンセル</button>
+                <button className="event-save-btn" onClick={handleSave} disabled={saving || !title.trim()}>
+                    {saving ? "保存中" : "保存"}
                 </button>
             </div>
 
-            {/* ===== タイトル入力 ===== */}
+            {/* タイトル */}
             <input
                 className="event-title-input"
                 placeholder="タイトル"
@@ -325,121 +305,149 @@ function EventDetail() {
                 onChange={e => setTitle(e.target.value)}
             />
 
-            {/* ===== 日時セクション =====
-          画像①③を参考に区切り線の構成:
-          - 終日行の下にボーダー
-          - 開始日行の下にボーダー（ピッカー展開時はピッカーを挟む）
-          - 終了日行の下にボーダーなし（次のevent-cardのtop borderで区切られる）
-      */}
+            {/* 時刻カード */}
             <div className="event-card">
 
                 {/* 終日トグル */}
                 <div className="event-allday-row">
-                    <div className="event-row-icon"><HiOutlineClock size={20} /></div>
+                    <div className="event-row-icon"><HiOutlineClock size={18} /></div>
                     <span className="event-row-label">終日</span>
-                    <button
-                        className={`toggle-track ${allDay ? "on" : ""}`}
-                        onClick={() => setAllDay(a => !a)}
-                        aria-label="終日切り替え"
-                    >
+                    <button className={`toggle-track ${allDay ? "on" : ""}`} onClick={() => setAllDay(v => !v)}>
                         <div className="toggle-thumb" />
                     </button>
                 </div>
 
-                {/* 開始日 */}
-                <div className="event-date-row event-date-row--bordered"
-                    onClick={() => togglePicker("start-date")}>
-                    <span className="event-date-label">{formatDate(startDate)}</span>
+                {/* 開始日時行 */}
+                <div className="event-date-row event-date-row--bordered">
+                    <span className="event-date-label" onClick={() => togglePicker("start-date")}>
+                        {formatDateBtn(startDate)}
+                    </span>
                     {!allDay && (
-                        <span className="event-time-label"
-                            onClick={e => { e.stopPropagation(); togglePicker("start-time"); }}>
+                        <span className="event-time-label" onClick={() => togglePicker("start-time")}>
                             {startHour}:{startMin}
                         </span>
                     )}
                 </div>
 
-                {/* 開始日ピッカー */}
-                {openPicker === "start-date" && (
+                {/* 開始日ミニカレ */}
+                {picker === "start-date" && (
                     <div className="event-picker-panel">
-                        <MiniCal selected={startDate} onSelect={d => { setStartDate(d); setOpenPicker("none"); }} />
+                        <MiniCal
+                            year={calYear} month={calMonth}
+                            selected={startDate}
+                            onPrevMonth={() => { if(calMonth===0){setCalYear(y=>y-1);setCalMonth(11);}else setCalMonth(m=>m-1); }}
+                            onNextMonth={() => { if(calMonth===11){setCalYear(y=>y+1);setCalMonth(0);}else setCalMonth(m=>m+1); }}
+                            onSelect={d => selectDate(d, "start")}
+                            accent={accent}
+                        />
                     </div>
                 )}
 
-                {/* 開始時刻ドラム */}
-                {!allDay && openPicker === "start-time" && (
+                {/* 開始時間ドラムロール */}
+                {picker === "start-time" && !allDay && (
                     <div className="event-picker-panel">
-                        <div className="time-drum">
-                            <DrumPicker items={HOURS} selected={startHour} onChange={setStartHour} />
-                            <div style={{ display: "flex", alignItems: "center", fontSize: 22, padding: "0 4px" }}>:</div>
-                            <DrumPicker items={MINUTES} selected={startMin} onChange={setStartMin} />
+                        <div style={{ display:"flex", justifyContent:"center", alignItems:"center", padding:"8px 0 16px", gap:4 }}>
+                            <DrumRoll items={HOURS}   value={startHour} onChange={setStartHour} accent={accent} />
+                            <span style={{ fontSize:24, fontWeight:700, color:"#333", margin:"0 4px" }}>:</span>
+                            <DrumRoll items={MINUTES} value={startMin}  onChange={setStartMin}  accent={accent} />
                         </div>
                     </div>
                 )}
 
-                {/* 終了日 */}
-                <div className="event-date-row" onClick={() => togglePicker("end-date")}>
-                    <span className="event-date-label">{formatDate(endDate)}</span>
+                {/* 終了日時行 */}
+                <div className="event-date-row">
+                    <span className="event-date-label" onClick={() => togglePicker("end-date")}>
+                        {formatDateBtn(endDate)}
+                    </span>
                     {!allDay && (
-                        <span className="event-time-label"
-                            onClick={e => { e.stopPropagation(); togglePicker("end-time"); }}>
+                        <span className="event-time-label" onClick={() => togglePicker("end-time")}>
                             {endHour}:{endMin}
                         </span>
                     )}
                 </div>
 
-                {/* 終了日ピッカー */}
-                {openPicker === "end-date" && (
+                {/* 終了日ミニカレ */}
+                {picker === "end-date" && (
                     <div className="event-picker-panel">
-                        <MiniCal selected={endDate} onSelect={d => { setEndDate(d); setOpenPicker("none"); }} />
+                        <MiniCal
+                            year={calYear} month={calMonth}
+                            selected={endDate}
+                            onPrevMonth={() => { if(calMonth===0){setCalYear(y=>y-1);setCalMonth(11);}else setCalMonth(m=>m-1); }}
+                            onNextMonth={() => { if(calMonth===11){setCalYear(y=>y+1);setCalMonth(0);}else setCalMonth(m=>m+1); }}
+                            onSelect={d => selectDate(d, "end")}
+                            accent={accent}
+                        />
                     </div>
                 )}
 
-                {/* 終了時刻ドラム */}
-                {!allDay && openPicker === "end-time" && (
+                {/* 終了時間ドラムロール */}
+                {picker === "end-time" && !allDay && (
                     <div className="event-picker-panel">
-                        <div className="time-drum">
-                            <DrumPicker items={HOURS} selected={endHour} onChange={setEndHour} />
-                            <div style={{ display: "flex", alignItems: "center", fontSize: 22, padding: "0 4px" }}>:</div>
-                            <DrumPicker items={MINUTES} selected={endMin} onChange={setEndMin} />
+                        <div style={{ display:"flex", justifyContent:"center", alignItems:"center", padding:"8px 0 16px", gap:4 }}>
+                            <DrumRoll items={HOURS}   value={endHour} onChange={setEndHour} accent={accent} />
+                            <span style={{ fontSize:24, fontWeight:700, color:"#333", margin:"0 4px" }}>:</span>
+                            <DrumRoll items={MINUTES} value={endMin}  onChange={setEndMin}  accent={accent} />
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* ===== メモセクション（画像通り独立した区切り） ===== */}
+            {/* メモ */}
             <div className="event-card">
                 <div className="event-row">
-                    <div className="event-row-icon"><HiOutlinePencilSquare size={20} /></div>
-                    <input
-                        className="event-memo-input"
-                        placeholder="メモ"
-                        value={memo}
-                        onChange={e => setMemo(e.target.value)}
-                    />
+                    <div className="event-row-icon"><HiOutlinePencil size={18} /></div>
+                    <input className="event-memo-input" placeholder="メモ" value={memo} onChange={e => setMemo(e.target.value)} />
                 </div>
             </div>
 
-            {/* ===== 誰の予定か選択（画像通り独立した区切り） =====
-          isPare=false → 自分のテーマ色
-          isPare=true  → パートナーのテーマ色（ピンク⇔水色が入れ替わる）
-          タップするたびに切り替わる */}
+            {/* 誰の予定か */}
             <div className="event-card">
-                <div className="event-row" onClick={() => setIsPare(p => !p)}>
-                    <div className="event-row-icon"><HiOutlineUserGroup size={20} /></div>
-                    <span className="event-partner-chip">
-                        {isPare ? partnerName : myName}
-                    </span>
+                <div className="event-row">
+                    <div className="event-row-icon"><HiOutlineUsers size={18} /></div>
+                    <span className="event-partner-chip" style={{ opacity: !isPartnerOwner ? 1 : 0.35, cursor:"pointer" }} onClick={() => setIsPartnerOwner(false)}>{myName}</span>
+                    <span className="event-partner-chip" style={{ opacity: isPartnerOwner ? 1 : 0.35, cursor:"pointer", marginLeft:8 }} onClick={() => setIsPartnerOwner(true)}>{partnerName}</span>
                 </div>
             </div>
 
-            {/* ===== 削除ボタン（画面下部に独立配置） ===== */}
-            <div className="event-delete-area">
-                <button className="event-delete-btn" onClick={handleDelete}>
-                    <HiOutlineTrash size={18} />
-                    予定を削除
-                </button>
-            </div>
+            {isEditMode && (
+                <div className="event-delete-area">
+                    <button className="event-delete-btn" onClick={handleDelete}>予定を削除</button>
+                </div>
+            )}
+        </div>
+    );
+}
 
+// ===== ミニカレンダーコンポーネント =====
+function MiniCal({ year, month, selected, onPrevMonth, onNextMonth, onSelect, accent }: {
+    year: number; month: number; selected: Date;
+    onPrevMonth: () => void; onNextMonth: () => void;
+    onSelect: (d: Date) => void; accent: string;
+}) {
+    const days = buildMiniCalDays(year, month);
+    return (
+        <div className="mini-cal">
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                <button onClick={onPrevMonth} style={{ background:"none", border:"none", cursor:"pointer", color:accent, fontSize:20, padding:"0 8px" }}>‹</button>
+                <span style={{ fontSize:14, fontWeight:600 }}>{year}年{month+1}月</span>
+                <button onClick={onNextMonth} style={{ background:"none", border:"none", cursor:"pointer", color:accent, fontSize:20, padding:"0 8px" }}>›</button>
+            </div>
+            <div className="mini-cal-grid">
+                {WEEKDAYS_SHORT.map((d, i) => (
+                    <div key={d} className={`mini-cal-weekday ${i===5?"sat":i===6?"sun":""}`}>{d}</div>
+                ))}
+                {days.map((d, i) => d ? (
+                    <button
+                        key={i}
+                        className={[
+                            "mini-cal-day",
+                            d.toDateString() === selected.toDateString() ? "selected" : "",
+                            (d.getDay()+6)%7 === 5 ? "sat" : (d.getDay()+6)%7 === 6 ? "sun" : "",
+                        ].join(" ")}
+                        onClick={() => onSelect(d)}
+                    >{d.getDate()}</button>
+                ) : <div key={i} />)}
+            </div>
         </div>
     );
 }

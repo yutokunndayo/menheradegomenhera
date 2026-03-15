@@ -1,25 +1,23 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
+import GeminiProvider, { useGemini } from "../components/api";
 import TabBar from "../components/TabBar";
 import AppHeader from "../components/AppHeader";
-import { FiSend } from "react-icons/fi";
-import { FiUser } from "react-icons/fi";
+import { FiSend, FiUser } from "react-icons/fi";
 import bandageImage from "../assets/bandage.png";
 import chatHeartImage from "../assets/chat-heart.png";
 import "../styles/Chat.css";
 
-// ===== 型定義 =====
 interface Message {
     id: string;
-    sender: string;    // UUID（自分 or パートナー）
+    sender: string;
     text: string;
     time: string;
-    isMe: boolean;     // 自分が送ったかどうか
+    isMe: boolean;
 }
 
 type MyGender = "boyfriend" | "girlfriend";
 
-// ===== 性別テーマ =====
 const GENDER_THEME: Record<MyGender, {
     myBubbleClass: string;
     partnerBubbleClass: string;
@@ -46,12 +44,11 @@ const GENDER_THEME: Record<MyGender, {
     },
 };
 
-// ===== DB行をMessageに変換 =====
 function rowToMessage(row: Record<string, string>, myId: string): Message {
-    const d = new Date(row.send_at);   // created_at → send_at
+    const d = new Date(row.send_at);
     const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
     return {
-        id: String(row.uid),           // id → uid（int8なのでstringに変換）
+        id: String(row.uid),
         sender: row.sender,
         text: row.text,
         time,
@@ -59,7 +56,9 @@ function rowToMessage(row: Record<string, string>, myId: string): Message {
     };
 }
 
-function Chat() {
+function ChatInner() {
+    const { generateChatResponse } = useGemini();
+
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [partnerName, setPartnerName] = useState("パートナー");
@@ -67,64 +66,113 @@ function Chat() {
     const [isFocused, setIsFocused] = useState(false);
     const [myGender, setMyGender] = useState<MyGender>("boyfriend");
     const [myId, setMyId] = useState<string | null>(null);
-    const [partnerId, setPartnerId] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
 
     const bottomRef = useRef<HTMLDivElement>(null);
     const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+    const myGenderRef = useRef<MyGender>("boyfriend");
+    const partnerIdRef = useRef<string | null>(null);
+    const myIdRef = useRef<string | null>(null);
+    const messagesRef = useRef<Message[]>([]);
+    const initializedRef = useRef(false); // 二重初期化防止
 
-    // ===== 最下部へ自動スクロール =====
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
+
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // ===== プロフィール取得 + 過去メッセージ読み込み + リアルタイム購読 =====
+    const generateAndSaveAdvice = useCallback(async (
+        currentMessages: Message[],
+        myUserId: string,
+    ) => {
+        try {
+            const recentMessages = currentMessages.slice(-10);
+            if (recentMessages.length === 0) return;
+
+            const conversationText = recentMessages
+                .map((m) => `${m.isMe ? "彼女" : "彼氏"}: ${m.text}`)
+                .join("\n");
+
+            const prompt = `あなたは夜の街で数多の「メンヘラ女子」を対応し、幾度もの修羅場から生還してきた伝説のプロ黒服であり、今は恋愛の真理に到達した「黒服の仙人」です。
+以下は、あなたに教えを乞う彼氏（坊主）と、その彼女のチャット履歴です。彼女の言葉の裏にある「地雷」や「本音」を的確に見抜き、彼氏がどう返信すれば丸く収まるか、あるいは惚れ直させることができるかを指南してください。
+
+【条件】
+・「〜じゃ」「〜するんじゃな」「坊主」といった、渋くて達観した仙人口調で話すこと。
+・例文の時は普通のキャラに戻ること
+・バナーに表示するため、絶対に1〜2文の短いアドバイスにまとめること。
+・前置きや挨拶は一切不要。アドバイスの言葉のみを出力すること。
+・雑な返信にならないようなるべく7W1Hを意識して、具体的に返信内容を示すこと。
+・好きや愛してるなどの相手を肯定する言葉を必ず入れること。
+・会話がなるべく終わらないように、返信内容に質問を入れること。
+・会話が終わるタイミングはとくに見極めること。
+・彼女の言葉の裏にある「地雷」や「本音」を的確に見抜き、彼氏がどう返信すれば丸く収まるか、あるいは惚れ直させることができるかを指南すること。
+・
+チャット履歴:
+${conversationText}`;
+
+            const adviceText = await generateChatResponse(prompt);
+            if (!adviceText || adviceText.trim() === "") return;
+
+            const { error } = await supabase
+                .from("chat_emotion_contexts")
+                .insert({
+                    user_id: myUserId,
+                    emotion_text: adviceText.trim(),
+                });
+
+            if (error) {
+                console.error("[Advice] INSERTエラー:", error.code, error.message);
+                return;
+            }
+            console.log("[Advice] DB保存成功!");
+
+        } catch (e) {
+            console.error("[Advice] 予期せぬエラー:", e);
+        }
+    }, [generateChatResponse]);
+
     useEffect(() => {
         let isMounted = true;
 
-        const init = async () => {
-            // 1. ログインユーザー取得
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user || !isMounted) return;
+        const init = async (userId: string) => {
+            // 二重初期化を防ぐ
+            if (initializedRef.current) return;
+            initializedRef.current = true;
 
-            setMyId(user.id);
+            setMyId(userId);
+            myIdRef.current = userId;
 
-            // 2. 自分のプロフィール取得
-            const { data: myProfile, error: myProfileError } = await supabase
+            const { data: myProfile, error: profileError } = await supabase
                 .from("profiles")
                 .select("name, gender, partner, avatar")
-                .eq("id", user.id)
+                .eq("id", userId)
                 .maybeSingle();
 
-            console.log("myProfile:", myProfile);
-            console.log("myProfileError:", myProfileError);
-            if (myProfileError) {
-                console.error("myProfile取得エラー:", myProfileError);
+            if (profileError) {
+                console.error("[Chat] profiles取得エラー:", profileError.message);
+                initializedRef.current = false;
                 return;
             }
+            if (!myProfile || !isMounted) return;
 
-            if (!myProfile) {
-                console.error("profiles に自分のレコードがありません:", user.id);
-                return;
-            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const genderRaw = (myProfile as any).gender;
+            const gender: MyGender = (genderRaw === true || genderRaw === "true") ? "girlfriend" : "boyfriend";
+            setMyGender(gender);
+            myGenderRef.current = gender;
 
-            // genderはSetupで true=彼女 / false=彼氏 で保存
-            setMyGender(myProfile.gender === true ? "girlfriend" : "boyfriend");
-
-            const pId = myProfile.partner;
+            const pId: string | null = myProfile.partner ?? null;
             if (!pId) return;
-            setPartnerId(pId);
+            partnerIdRef.current = pId;
 
-            // 3. パートナーのプロフィール取得
-            const { data: partnerProfile, error: partnerProfileError } = await supabase
+            const { data: partnerProfile } = await supabase
                 .from("profiles")
                 .select("name, avatar")
                 .eq("id", pId)
                 .maybeSingle();
-
-            if (partnerProfileError) {
-                console.error("partnerProfile取得エラー:", partnerProfileError);
-            }
 
             if (partnerProfile) {
                 setPartnerName(partnerProfile.name ?? "パートナー");
@@ -136,52 +184,70 @@ function Chat() {
                 }
             }
 
-            // 4. 過去メッセージを取得（自分とパートナーのチャットのみ、is_memory=false）
             const { data: rows } = await supabase
                 .from("messages")
-                .select("uid, sender, text, send_at")   // id→uid, created_at→send_at
+                .select("uid, sender, text, send_at")
                 .eq("is_memory", false)
-                .in("sender", [user.id, pId])
-                .order("send_at", { ascending: true })  // created_at→send_at
+                .in("sender", [userId, pId])
+                .order("send_at", { ascending: true })
                 .limit(100);
 
             if (rows && isMounted) {
-                setMessages(rows.map(r => rowToMessage(r, user.id)));
+                setMessages(rows.map(r => rowToMessage(r, userId)));
             }
 
-            // 5. リアルタイム購読（パートナーの新着メッセージを即時受信）
+            // リアルタイム購読 — 既存チャンネルがあれば先に削除
+            if (channelRef.current) {
+                await supabase.removeChannel(channelRef.current);
+                channelRef.current = null;
+            }
+
+            const channelName = `chat-${[userId, pId].sort().join("-")}`;
             channelRef.current = supabase
-                .channel(`chat-${[user.id, pId].sort().join("-")}`)  // ユニークなチャンネル名
+                .channel(channelName)
                 .on(
                     "postgres_changes",
                     {
                         event: "INSERT",
                         schema: "public",
                         table: "messages",
-                        // パートナーが送ったメッセージだけを受信
                         filter: `sender=eq.${pId}`,
                     },
                     (payload) => {
                         if (!isMounted) return;
                         const newMsg = rowToMessage(
                             payload.new as Record<string, string>,
-                            user.id
+                            userId
                         );
                         setMessages(prev => {
-                            // uid で重複チェック
                             if (prev.find(m => m.id === newMsg.id)) return prev;
                             return [...prev, newMsg];
                         });
                     }
                 )
-                .subscribe();
+                .subscribe((status) => {
+                    console.log("[Chat] Realtime status:", status);
+                });
         };
 
-        init();
+        // getSession で即時取得を優先、なければ onAuthStateChange で待つ
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user && isMounted) {
+                init(session.user.id);
+            }
+        });
 
-        // クリーンアップ（画面離脱時にリアルタイム購読を解除）
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            async ( _event, session) => {
+                if (session?.user && isMounted && !initializedRef.current) {
+                    await init(session.user.id);
+                }
+            }
+        );
+
         return () => {
             isMounted = false;
+            subscription.unsubscribe();
             if (channelRef.current) {
                 supabase.removeChannel(channelRef.current);
                 channelRef.current = null;
@@ -189,30 +255,28 @@ function Chat() {
         };
     }, []);
 
-    // ===== 送信処理 =====
     const handleSend = async () => {
         const text = input.trim();
-        if (!text || !myId || sending) return;
+        const currentMyId = myId;
+        if (!text || !currentMyId || sending) return;
 
         setSending(true);
         setInput("");
 
-        // 楽観的UI: 送信前に即座に画面に追加
         const tempId = `temp-${Date.now()}`;
         const optimisticMsg: Message = {
             id: tempId,
-            sender: myId,
+            sender: currentMyId,
             text,
             time: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
             isMe: true,
         };
         setMessages(prev => [...prev, optimisticMsg]);
 
-        // DBに保存
         const { data, error } = await supabase.from("messages").insert({
-            sender: myId,
+            sender: currentMyId,
             text,
-            send_at: new Date().toISOString(),  // send_at を明示的にセット
+            send_at: new Date().toISOString(),
             is_memory: false,
         }).select("uid, sender, text, send_at").single();
 
@@ -220,17 +284,24 @@ function Chat() {
 
         if (error) {
             console.error("送信エラー:", error.message);
-            // 失敗したら楽観的UIを取り消す
             setMessages(prev => prev.filter(m => m.id !== tempId));
-            setInput(text); // 入力欄に戻す
+            setInput(text);
             return;
         }
 
         if (data) {
-            // 仮IDを本物のDBのIDに差し替える
             setMessages(prev =>
-                prev.map(m => m.id === tempId ? rowToMessage(data, myId) : m)
+                prev.map(m => m.id === tempId ? rowToMessage(data, currentMyId) : m)
             );
+        }
+
+        // 彼女（gender=true）のみ: 自分のIDでアドバイスをDBに保存
+        if (myGenderRef.current === "girlfriend" && myIdRef.current) {
+            const latestMessages = [
+                ...messagesRef.current.filter(m => m.id !== tempId),
+                data ? rowToMessage(data, currentMyId) : optimisticMsg,
+            ];
+            generateAndSaveAdvice(latestMessages, myIdRef.current);
         }
     };
 
@@ -244,15 +315,12 @@ function Chat() {
                 {messages.map((msg, i) => {
                     const isPartner = !msg.isMe;
                     const showIcon = isPartner && (i === 0 || messages[i - 1].isMe);
-
                     const bubbleClass = isPartner ? theme.partnerBubbleClass : theme.myBubbleClass;
                     const decoImage = isPartner ? theme.partnerDecoImage : theme.myDecoImage;
                     const decoClass = isPartner ? theme.partnerDecoClass : theme.myDecoClass;
 
                     return (
                         <div key={msg.id} className={`chat-row ${isPartner ? "row-partner" : "row-me"}`}>
-
-                            {/* パートナーアイコン */}
                             {isPartner && (
                                 <div className="chat-row-icon">
                                     {showIcon && (
@@ -266,8 +334,6 @@ function Chat() {
                                     )}
                                 </div>
                             )}
-
-                            {/* バブル本体 + 装飾 */}
                             <div className="chat-bubble-wrap">
                                 <div className={`chat-bubble ${bubbleClass}`}>
                                     {msg.text.split("\n").map((line, j, arr) => (
@@ -284,11 +350,9 @@ function Chat() {
                         </div>
                     );
                 })}
-
                 <div ref={bottomRef} />
             </div>
 
-            {/* 入力バー */}
             <div className="chat-input-bar">
                 <input
                     className="chat-input"
@@ -312,6 +376,14 @@ function Chat() {
 
             {!isFocused && <TabBar />}
         </div>
+    );
+}
+
+function Chat() {
+    return (
+        <GeminiProvider>
+            <ChatInner />
+        </GeminiProvider>
     );
 }
 

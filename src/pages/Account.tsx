@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
-import { clearUserCache, updateCachedAvatarUrl } from "../lib/userCache"
+import { updateCachedAvatarUrl } from "../lib/userCache"
 import { FiCamera } from "react-icons/fi"
 import TabBar from "../components/TabBar"
 import decor from "../assets/decor.png"
@@ -34,11 +34,9 @@ export default function Account() {
 
       if (profile) {
         setDisplayName(profile.name ?? "")
+        // profiles.avatar には Setup で保存した完全なURLが入っているのでそのまま使う
         if (profile.avatar) {
-          const { data: urlData } = supabase.storage
-            .from("avatars")
-            .getPublicUrl(profile.avatar)
-          setAvatarUrl(urlData.publicUrl)
+          setAvatarUrl(profile.avatar)
         }
       }
     }
@@ -51,20 +49,22 @@ export default function Account() {
     setUploading(true)
     try {
       const ext      = file.name.split(".").pop() || "jpg"
-      const filePath = `${userId}/avatar.${ext}`
+      // Setup.tsx と同じく images バケットに userId.ext で保存
+      const filePath = `${userId}.${ext}`
 
       const { error: upErr } = await supabase.storage
-        .from("avatars")
+        .from("images")
         .upload(filePath, file, { upsert: true, cacheControl: "3600" })
       if (upErr) throw upErr
 
-      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath)
-      await supabase.from("profiles").update({ avatar: filePath }).eq("id", userId)
+      const { data: urlData } = supabase.storage.from("images").getPublicUrl(filePath)
 
-      // キャッシュバスター付きURLで即時反映
+      // キャッシュバスター付き完全URLをそのままDBに保存（Setup.tsx と同じ形式）
       const freshUrl = urlData.publicUrl + "?t=" + Date.now()
 
-      // キャッシュを更新（clearしない→他のキャッシュは維持）
+      await supabase.from("profiles").update({ avatar: freshUrl }).eq("id", userId)
+
+      // キャッシュを更新（他のキャッシュは維持）
       updateCachedAvatarUrl(freshUrl)
       setAvatarUrl(freshUrl)
 

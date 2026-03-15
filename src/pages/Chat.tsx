@@ -74,7 +74,7 @@ function ChatInner() {
     const partnerIdRef = useRef<string | null>(null);
     const myIdRef = useRef<string | null>(null);
     const messagesRef = useRef<Message[]>([]);
-    const initializedRef = useRef(false); // 二重初期化防止
+    const initializedRef = useRef(false);
 
     useEffect(() => {
         messagesRef.current = messages;
@@ -138,7 +138,6 @@ ${conversationText}`;
         let isMounted = true;
 
         const init = async (userId: string) => {
-            // 二重初期化を防ぐ
             if (initializedRef.current) return;
             initializedRef.current = true;
 
@@ -176,11 +175,9 @@ ${conversationText}`;
 
             if (partnerProfile) {
                 setPartnerName(partnerProfile.name ?? "パートナー");
+                // profiles.avatar には Setup で保存した完全なURLが入っているのでそのまま使う
                 if (partnerProfile.avatar) {
-                    const { data: urlData } = supabase.storage
-                        .from("avatars")
-                        .getPublicUrl(partnerProfile.avatar);
-                    setPartnerIcon(urlData.publicUrl);
+                    setPartnerIcon(partnerProfile.avatar);
                 }
             }
 
@@ -196,7 +193,6 @@ ${conversationText}`;
                 setMessages(rows.map(r => rowToMessage(r, userId)));
             }
 
-            // リアルタイム購読 — 既存チャンネルがあれば先に削除
             if (channelRef.current) {
                 await supabase.removeChannel(channelRef.current);
                 channelRef.current = null;
@@ -230,7 +226,6 @@ ${conversationText}`;
                 });
         };
 
-        // getSession で即時取得を優先、なければ onAuthStateChange で待つ
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user && isMounted) {
                 init(session.user.id);
@@ -238,7 +233,7 @@ ${conversationText}`;
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async ( _event, session) => {
+            async (_event, session) => {
                 if (session?.user && isMounted && !initializedRef.current) {
                     await init(session.user.id);
                 }
@@ -295,7 +290,6 @@ ${conversationText}`;
             );
         }
 
-        // 彼女（gender=true）のみ: 自分のIDでアドバイスをDBに保存
         if (myGenderRef.current === "girlfriend" && myIdRef.current) {
             const latestMessages = [
                 ...messagesRef.current.filter(m => m.id !== tempId),

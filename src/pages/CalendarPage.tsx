@@ -5,7 +5,7 @@ import { getCachedProfile, getCachedGender } from "../lib/userCache";
 import TabBar from "../components/TabBar";
 import AppHeader from "../components/AppHeader";
 import TitlePage from "./TitlePage";
-import "../styles/calendar.css";
+import "../styles/Calendar.css";
 
 // ===== 型定義 =====
 interface CalEvent {

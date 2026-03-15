@@ -1,14 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
+import iconImage from "../assets/icon.png";
 
 interface AuthHeaderProps {
     // 戻るボタンのリンク先。省略した場合は戻るボタンを表示しない
     backTo?: string;
-    // アプリ名（省略時は "Menhera"）
+    // アプリ名（省略時は "KoiNavi"）
     appName?: string;
 }
 
-function AuthHeader({ backTo, appName = "Menhera" }: AuthHeaderProps) {
+function AuthHeader({ backTo, appName = "KoiNavi" }: AuthHeaderProps) {
     const navigate = useNavigate();
 
     return (
@@ -30,14 +31,7 @@ function AuthHeader({ backTo, appName = "Menhera" }: AuthHeaderProps) {
             )}
 
             <div className="auth-logo">
-                {/*
-          アイコン差し込み方法:
-          .logo-icon-placeholder を削除して以下に差し替え
-          <img src="/icon.png" alt="アイコン" width="72" height="72" style={{ borderRadius: "50%" }} />
-        */}
-                <div className="logo-icon-placeholder" aria-label="アプリアイコン">
-                    <span className="logo-icon-text">♡</span>
-                </div>
+                <img src={iconImage} alt="アイコン" width="72" height="72" style={{ borderRadius: "50%" }} />
                 <p className="logo-appname">{appName}</p>
             </div>
         </div>

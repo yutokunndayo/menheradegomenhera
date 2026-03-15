@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { HiPlus, HiChevronLeft } from "react-icons/hi2";
-import "../styles/calendar.css";
+import "../styles/Calendar.css";
 
 interface CalEvent {
     id: string;

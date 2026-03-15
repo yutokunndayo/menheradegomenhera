@@ -1,97 +1,107 @@
-/* ページ全体 */
 .album-edit-page {
   min-height: 100vh;
-  background: #f7f7f7;
+  background: white;
   padding-bottom: 120px;
 }
 
-/* タイトル入力 */
 .album-title-input {
-  padding: 20px 16px;
+  padding: 16px 16px 8px;
 }
 
 .album-title-input input {
   width: 100%;
   padding: 12px 14px;
   border-radius: 10px;
-  border: 1px solid #ddd;
+  border: 1.5px solid #fce4ec;
   font-size: 16px;
   outline: none;
   box-sizing: border-box;
+  font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
 
-.album-title-input input:focus {
-  border-color: #ff8fa3;
-  box-shadow: 0 0 0 2px rgba(255, 143, 163, 0.2);
+.album-title-input input:focus { border-color: #f5317f; }
+
+.select-area { padding: 8px 16px; }
+
+.select-button {
+  display: inline-block;
+  background: #f5317f;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
 }
 
-/* 写真プレビュー */
+.select-button input { display: none; }
+
 .album-preview {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  padding: 0 16px 20px;
+  gap: 6px;
+  padding: 12px 16px;
 }
 
-/* 写真 */
+.preview-wrapper { position: relative; }
+
 .preview-image {
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
-  border-radius: 10px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
   display: block;
 }
 
-/* 作成ボタン */
+.preview-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.preview-new-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: #f5317f;
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
 .create-album-button {
   position: fixed;
   bottom: 90px;
   left: 50%;
   transform: translateX(-50%);
-
   width: calc(100% - 32px);
   max-width: 400px;
-
   padding: 14px;
   border: none;
   border-radius: 14px;
-
-  background: #ff8fa3;
+  background: #f5317f;
   color: white;
-
   font-size: 16px;
   font-weight: bold;
-
   cursor: pointer;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
-  transition: background 0.2s ease;
-}
-
-.create-album-button:hover {
-  background: #ff7b91;
+  box-shadow: 0 6px 14px rgba(245,49,127,0.3);
 }
 
 .create-album-button:disabled {
   background: #ccc;
   cursor: not-allowed;
   box-shadow: none;
-}
-
-/* ===== レスポンシブ ===== */
-@media (max-width: 480px) {
-  .album-preview {
-    gap: 6px;
-    padding: 0 12px 16px;
-  }
-
-  .preview-image {
-    border-radius: 8px;
-  }
-
-  .create-album-button {
-    font-size: 15px;
-    padding: 12px;
-    bottom: 80px;
-  }
 }

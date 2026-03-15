@@ -20,8 +20,8 @@ export default function LogoutModalPage() {
       return
     }
 
-    // ログイン画面へ
-    navigate("/login")
+    // ログイン選択画面へ
+    navigate("/AuthSelect")
   }
 
   return (

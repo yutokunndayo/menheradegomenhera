@@ -56,7 +56,7 @@ function App() {
             <Route path='/invite' element={<InvitePage />} />
             <Route path='/join' element={<JoinPage />} />
             <Route path='/forgot-password' element={<ForgotPassword />} />
-            <Route path='/authCallback' element={<AuthCallback />} />
+            <Route path='/authcallback' element={<AuthCallback />} />
 
             {/* OAuth コールバック → チャット画面へ */}
             <Route path='/signup-callback' element={<SignupCallback />} />

@@ -6,7 +6,7 @@ import {
     HiOutlineClipboardDocumentList,
     HiChatBubbleOvalLeftEllipsis,
 } from "react-icons/hi2";
-import "./Tabbar.css";
+import "./TabBar.css";
 
 const tabs = [
     { path: "/home", label: "ホーム", Icon: HiOutlineHome },

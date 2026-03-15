@@ -13,7 +13,7 @@ const SAGE_HIDDEN_PATHS = [
   "/register",
   "/setup",
   "/forgot-password",
-  "/authCallback",
+  "/authcallback",
   "/signup-callback",
   "/invite",
   "/join",

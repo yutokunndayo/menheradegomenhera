@@ -10,7 +10,7 @@ function AuthSelect() {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${window.location.origin}/authCallback`,
+                redirectTo: `${window.location.origin}/authcallback`,
             },
         });
         if (error) alert(error.message);

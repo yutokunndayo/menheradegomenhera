@@ -9,7 +9,7 @@ const UNGUARDED_PATHS = [
     "/register",
     "/setup",
     "/forgot-password",
-    "/authCallback",
+    "/authcallback",
     "/signup-callback",
     "/invite",
     "/join",

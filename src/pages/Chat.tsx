@@ -90,12 +90,23 @@ function Chat() {
             setMyId(user.id);
 
             // 2. 自分のプロフィール取得
-            const { data: myProfile } = await supabase
+            const { data: myProfile, error: myProfileError } = await supabase
                 .from("profiles")
                 .select("name, gender, partner, avatar")
                 .eq("id", user.id)
-                .single();
-            if (!myProfile || !isMounted) return;
+                .maybeSingle();
+
+            console.log("myProfile:", myProfile);
+            console.log("myProfileError:", myProfileError);
+            if (myProfileError) {
+                console.error("myProfile取得エラー:", myProfileError);
+                return;
+            }
+
+            if (!myProfile) {
+                console.error("profiles に自分のレコードがありません:", user.id);
+                return;
+            }
 
             // genderはSetupで true=彼女 / false=彼氏 で保存
             setMyGender(myProfile.gender === true ? "girlfriend" : "boyfriend");
@@ -105,13 +116,17 @@ function Chat() {
             setPartnerId(pId);
 
             // 3. パートナーのプロフィール取得
-            const { data: partnerProfile } = await supabase
+            const { data: partnerProfile, error: partnerProfileError } = await supabase
                 .from("profiles")
                 .select("name, avatar")
                 .eq("id", pId)
-                .single();
+                .maybeSingle();
 
-            if (partnerProfile && isMounted) {
+            if (partnerProfileError) {
+                console.error("partnerProfile取得エラー:", partnerProfileError);
+            }
+
+            if (partnerProfile) {
                 setPartnerName(partnerProfile.name ?? "パートナー");
                 if (partnerProfile.avatar) {
                     const { data: urlData } = supabase.storage

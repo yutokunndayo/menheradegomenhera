@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // ↓ GeminiDemo を直接読み込む場合はこちらを残します
 import GeminiDemo from './pages/test';
-import PartnerGuard from './components/PartnerGuard'
 import {
   Home,
   Example,

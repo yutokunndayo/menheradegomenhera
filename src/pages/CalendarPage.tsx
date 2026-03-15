@@ -78,7 +78,7 @@ function CalendarPage() {
     const [myGender, setMyGender] = useState<MyGender>("boyfriend");
     const [year, setYear] = useState(today.getFullYear());
     const [month, setMonth] = useState(today.getMonth());
-    const [events, setEvents] = useState<CalEvent[]>(DUMMY_EVENTS);
+    const [events] = useState<CalEvent[]>(DUMMY_EVENTS);
 
     const days = buildCalDays(year, month);
 

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
-
+import iconLogo from "../assets/icon.png";
 interface TitlePageProps {
     // hideTimer=true のとき自動遷移しない（PartnerGuardのローディング用）
     hideTimer?: boolean;
@@ -25,9 +25,7 @@ function TitlePage({ hideTimer = false }: TitlePageProps) {
             <div className="title-deco-circle-3" />
 
             <div className="title-content">
-                <div className="title-icon-placeholder" aria-label="アプリアイコン">
-                    <span className="title-icon-text">♡</span>
-                </div>
+                <img src={iconLogo} alt="アイコン" width="120" height="120" style={{ borderRadius: "50%" }} />
                 <p className="title-appname">FamLink</p>
             </div>
         </div>

@@ -1,26 +1,23 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { getCachedProfile, getCachedGender } from "../lib/userCache";
 import { HiChevronLeft } from "react-icons/hi2";
-
-import happyImage from "../assets/happy.png";
-import sadImage from "../assets/sad.png";
-import angryImage from "../assets/angry.png";
+import happyImage  from "../assets/happy.png";
+import sadImage    from "../assets/sad.png";
+import angryImage  from "../assets/angry.png";
 import normalImage from "../assets/normal.png";
-import funImage from "../assets/fun.png";
-
+import funImage    from "../assets/fun.png";
 import "../styles/diary.css";
 
-// ===== 感情定義 =====
-// index 0=しんどい 1=かなしい 2=ふつう 3=うれしい 4=たのしい
 const EMOTION_IMAGES = [angryImage, sadImage, normalImage, happyImage, funImage];
-const EMOTION_NAMES = ["しんどい", "かなしい", "ふつう", "うれしい", "たのしい"];
+const EMOTION_NAMES  = ["しんどい", "かなしい", "ふつう", "うれしい", "たのしい"];
 const EMOTION_COLORS = ["#b0bec5", "#90caf9", "#ffcc80", "#f48fb1", "#ef9a9a"];
 
 type MyGender = "boyfriend" | "girlfriend";
 
 function formatDateHeader(dateStr: string) {
-    const d = new Date(dateStr + "T00:00:00");
+    const d    = new Date(dateStr + "T00:00:00");
     const days = ["日", "月", "火", "水", "木", "金", "土"];
     return `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`;
 }
@@ -28,95 +25,98 @@ function formatDateHeader(dateStr: string) {
 function DiaryDetail() {
     const navigate = useNavigate();
     const [params] = useSearchParams();
-    const dateStr = params.get("date") ?? new Date().toISOString().slice(0, 10);
+    const dateStr  = params.get("date") ?? new Date().toISOString().slice(0, 10);
 
-    const [myGender, setMyGender] = useState<MyGender>("boyfriend");
-    const [myName, setMyName] = useState("自分");
-    const [partnerName, setPartnerName] = useState("パートナー");
-    const [myEmotion, setMyEmotion] = useState<number | null>(null);
+    // getCachedGenderで即時初期値セット（チラつき防止）
+    const [myGender,       setMyGender]       = useState<MyGender>(getCachedGender() ?? "boyfriend");
+    const [myName,         setMyName]         = useState("自分");
+    const [partnerName,    setPartnerName]    = useState("パートナー");
+    const [myEmotion,      setMyEmotion]      = useState<number | null>(null);
     const [partnerEmotion, setPartnerEmotion] = useState<number | null>(null);
-    const [myText, setMyText] = useState<string | null>(null);
-    const [partnerText, setPartnerText] = useState<string | null>(null);
+    const [myText,         setMyText]         = useState<string | null>(null);
+    const [partnerText,    setPartnerText]    = useState<string | null>(null);
 
     useEffect(() => {
         const fetchDetail = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            // キャッシュからプロフィール取得（Supabase節約）
+            const profile = await getCachedProfile();
+            if (!profile) return;
 
-            const { data: myProfile } = await supabase
-                .from("profiles").select("name, gender, partner").eq("id", user.id).single();
-            if (myProfile?.gender) setMyGender(myProfile.gender as MyGender);
-            if (myProfile?.name) setMyName(myProfile.name);
+            setMyGender(profile.gender === false ? "boyfriend" : "girlfriend");
+            setMyName(profile.name);
 
-            if (myProfile?.partner) {
+            if (profile.partner) {
                 const { data: pProfile } = await supabase
-                    .from("profiles").select("name").eq("id", myProfile.partner).single();
+                    .from("profiles").select("name").eq("id", profile.partner).single();
                 if (pProfile?.name) setPartnerName(pProfile.name);
             }
 
-            // ===== ダミーデータ（DB接続後は削除） =====
-            setMyEmotion(Math.floor(Math.random() * 5));
-            setPartnerEmotion(Math.floor(Math.random() * 5));
-            setMyText("今日はいろいろあったけど、まあまあかな。");
-            setPartnerText("ちょっと疲れた一日だった。");
+            // ===== その日の日記をDBから取得 =====
+            // タイムゾーンズレ防止のためローカル時刻文字列を使う
+            const from = `${dateStr}T00:00:00`;
+            const to   = `${dateStr}T23:59:59`;
 
-            // ===== DB接続後はここを解除してダミーを削除 =====
-            // const from = dateStr + "T00:00:00.000Z";
-            // const to   = dateStr + "T23:59:59.999Z";
-            // const { data: logs } = await supabase
-            //   .from("メッセージストレージ")
-            //   .select("*").eq("isMemory", true)
-            //   .gte("sendAt", from).lte("sendAt", to);
-            // if (logs) {
-            //   const mine    = logs.find(l => l.id === user.id);
-            //   const partner = logs.find(l => l.id !== user.id);
-            //   if (mine)    { const p = JSON.parse(mine.message);    setMyEmotion(p.emotion);      setMyText(p.text); }
-            //   if (partner) { const p = JSON.parse(partner.message); setPartnerEmotion(p.emotion); setPartnerText(p.text); }
-            // }
+            // 自分の日記
+            const { data: myLog } = await supabase
+                .from("diary_entries")
+                .select("emotion, text")
+                .eq("user_id", profile.id)
+                .gte("created_at", from)
+                .lte("created_at", to)
+                .single();
+
+            if (myLog) {
+                setMyEmotion(myLog.emotion);
+                setMyText(myLog.text ?? null);
+            }
+
+            // パートナーの日記（RLSで取得可能）
+            if (profile.partner) {
+                const { data: pLog } = await supabase
+                    .from("diary_entries")
+                    .select("emotion, text")
+                    .eq("user_id", profile.partner)
+                    .gte("created_at", from)
+                    .lte("created_at", to)
+                    .single();
+
+                if (pLog) {
+                    setPartnerEmotion(pLog.emotion);
+                    setPartnerText(pLog.text ?? null);
+                }
+            }
         };
         fetchDetail();
     }, [dateStr]);
 
-    const myColor = myGender === "boyfriend" ? "#4dd0e1" : "#f5317f";
+    const myColor   = myGender === "boyfriend" ? "#4dd0e1" : "#f5317f";
     const pareColor = myGender === "boyfriend" ? "#f5317f" : "#4dd0e1";
 
     return (
         <div className="diary-wrapper">
-
-            {/* ===== ヘッダー代わりの戻るボタン行（画像3のEventListスタイル） ===== */}
             <div className="ddetail-header">
-                <button
-                    className="ddetail-back-btn"
-                    onClick={() => navigate(-1)}
-                    aria-label="戻る"
-                >
+                <button className="ddetail-back-btn" onClick={() => navigate(-1)} aria-label="戻る">
                     <HiChevronLeft size={22} color="#f5317f" />
                     <span>{formatDateHeader(dateStr)}</span>
                 </button>
             </div>
 
             <div className="ddetail-body">
-
-                {/* ===== 自分のカード ===== */}
+                {/* 自分のカード */}
                 <div className="ddetail-card" style={{ borderColor: myColor }}>
                     <div className="ddetail-card-header" style={{ background: myColor }}>
                         <span className="ddetail-card-name">{myName}</span>
                     </div>
-
                     {myEmotion !== null ? (
                         <div className="ddetail-content">
                             <div className="ddetail-emotion-row">
-                                {/* 枠線なし・背景色のみ */}
                                 <img
                                     src={EMOTION_IMAGES[myEmotion]}
                                     alt={EMOTION_NAMES[myEmotion]}
                                     className="ddetail-emotion-img"
                                     style={{ background: EMOTION_COLORS[myEmotion] }}
                                 />
-                                <span
-                                    className="ddetail-emotion-label"
-                                    style={{ background: myColor }}
-                                >
+                                <span className="ddetail-emotion-label" style={{ background: myColor }}>
                                     {EMOTION_NAMES[myEmotion]}
                                 </span>
                             </div>
@@ -127,26 +127,21 @@ function DiaryDetail() {
                     )}
                 </div>
 
-                {/* ===== パートナーのカード ===== */}
+                {/* パートナーのカード */}
                 <div className="ddetail-card" style={{ borderColor: pareColor }}>
                     <div className="ddetail-card-header" style={{ background: pareColor }}>
                         <span className="ddetail-card-name">{partnerName}</span>
                     </div>
-
                     {partnerEmotion !== null ? (
                         <div className="ddetail-content">
                             <div className="ddetail-emotion-row">
-                                {/* 枠線なし・背景色のみ */}
                                 <img
                                     src={EMOTION_IMAGES[partnerEmotion]}
                                     alt={EMOTION_NAMES[partnerEmotion]}
                                     className="ddetail-emotion-img"
                                     style={{ background: EMOTION_COLORS[partnerEmotion] }}
                                 />
-                                <span
-                                    className="ddetail-emotion-label"
-                                    style={{ background: pareColor }}
-                                >
+                                <span className="ddetail-emotion-label" style={{ background: pareColor }}>
                                     {EMOTION_NAMES[partnerEmotion]}
                                 </span>
                             </div>

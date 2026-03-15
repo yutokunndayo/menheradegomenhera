@@ -35,7 +35,6 @@ type ChatEmotionContextRow = {
     created_at: string;
 };
 
-// ============================================================
 function SageOverlay() {
 
     const location = useLocation();

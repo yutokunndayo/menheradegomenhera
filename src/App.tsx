@@ -65,11 +65,10 @@ function App() {
             <Route path='/account' element={<Account />} />
             <Route path='/example' element={<Example />} />
 
-          <Route path='/diary' element={<DiaryPage />} />
-          <Route path='/diary-calendar' element={<DiaryCalendar />} />
-          <Route path='/diary-detail' element={<DiaryDetail />} />
-            {/* ログアウトモーダル画面 */}
-            <Route path='/logout' element={<LogoutModalPage />} />
+            <Route path='/diary' element={<DiaryPage />} />
+            <Route path='/diary-calendar' element={<DiaryCalendar />} />
+            <Route path='/diary-detail' element={<DiaryDetail />} />
+
 
             {/* テスト画面群（お好みでどちらかにアクセスしてください） */}
             <Route path='/test' element={<Test />} />
@@ -80,13 +79,13 @@ function App() {
             {/* ログアウトモーダル画面 */}
             <Route path='/logout' element={<LogoutModalPage />} />
 
-          {/* アルバムの新規作成画面 */}
-          <Route path="/album-new-create" element={<AlbumNewCreate />} />
+            {/* アルバムの新規作成画面 */}
+            <Route path="/album-new-create" element={<AlbumNewCreate />} />
 
-          <Route path="/album-edit" element={<AlbumEdit />} />
+            <Route path="/album-edit" element={<AlbumEdit />} />
 
-          {/* アルバム詳細画面 */}
-          <Route path='/album-detail' element={<AlbumDetail />} />
+            {/* アルバム詳細画面 */}
+            <Route path='/album-detail' element={<AlbumDetail />} />
 
           </Routes>
        

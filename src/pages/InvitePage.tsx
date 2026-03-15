@@ -21,7 +21,7 @@ function InvitePage() {
     useEffect(() => {
         const init = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) { navigate("/login", { replace: true }); return; }
+            if (!user) { navigate("/Auth", { replace: true }); return; }
 
             // すでにパートナーが設定済みならチャットへ
             const { data: profile } = await supabase

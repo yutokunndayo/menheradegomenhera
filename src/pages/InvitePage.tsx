@@ -23,6 +23,8 @@ function InvitePage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) { navigate("/Auth", { replace: true }); return; }
 
+            console.log("現在のユーザーID:", user.id);
+
             // すでにパートナーが設定済みならチャットへ
             const { data: profile } = await supabase
                 .from("profiles")

@@ -10,9 +10,12 @@ function JoinPage() {
   const [params] = useSearchParams();
   const ran = useRef(false);
 
-  const fromId = params.get("from");
-  const [status, setStatus] = useState<"loading" | "success" | "error" | "already">("loading");
-  const [errorMsg, setErrorMsg] = useState("");
+    // URLパラメータから招待者のUUIDを取得
+    // 例: /join?from=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const fromId = params.get("from");
+
+    const [status, setStatus] = useState<"loading" | "success" | "error" | "already">("loading");
+    const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     if (ran.current) return;

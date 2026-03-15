@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
 import { updateCachedAvatarUrl } from "../lib/userCache"
-import { FiCamera } from "react-icons/fi"
+import { FiCamera, FiCheck, FiX } from "react-icons/fi"
 import TabBar from "../components/TabBar"
 import decor from "../assets/decor.png"
 import "../styles/Account.css"
@@ -10,13 +10,19 @@ import "../styles/Account.css"
 export default function Account() {
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
-  const [displayName, setDisplayName] = useState("")
-  const [email,       setEmail]       = useState("")
-  const [avatarUrl,   setAvatarUrl]   = useState<string | null>(null)
-  const [isGoogle,    setIsGoogle]    = useState(false)
-  const [uploading,   setUploading]   = useState(false)
-  const [userId,      setUserId]      = useState<string | null>(null)
+  const [displayName,  setDisplayName]  = useState("")
+  const [email,        setEmail]        = useState("")
+  const [avatarUrl,    setAvatarUrl]    = useState<string | null>(null)
+  const [isGoogle,     setIsGoogle]     = useState(false)
+  const [uploading,    setUploading]    = useState(false)
+  const [userId,       setUserId]       = useState<string | null>(null)
+
+  // 名前編集用
+  const [editingName,  setEditingName]  = useState(false)
+  const [nameInput,    setNameInput]    = useState("")
+  const [savingName,   setSavingName]   = useState(false)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -34,16 +40,43 @@ export default function Account() {
 
       if (profile) {
         setDisplayName(profile.name ?? "")
-        if (profile.avatar) {
-          const { data: urlData } = supabase.storage
-            .from("avatars")
-            .getPublicUrl(profile.avatar)
-          setAvatarUrl(urlData.publicUrl)
-        }
+        if (profile.avatar) setAvatarUrl(profile.avatar)
       }
     }
     fetchUser()
   }, [])
+
+  // 編集モードに入ったらinputにフォーカス
+  useEffect(() => {
+    if (editingName) {
+      setNameInput(displayName)
+      setTimeout(() => nameInputRef.current?.focus(), 50)
+    }
+  }, [editingName])
+
+  const handleNameSave = async () => {
+    const trimmed = nameInput.trim()
+    if (!trimmed || !userId) return
+    setSavingName(true)
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ name: trimmed })
+        .eq("id", userId)
+      if (error) throw error
+      setDisplayName(trimmed)
+      setEditingName(false)
+    } catch (err) {
+      console.error("名前更新エラー:", err)
+    } finally {
+      setSavingName(false)
+    }
+  }
+
+  const handleNameCancel = () => {
+    setEditingName(false)
+    setNameInput("")
+  }
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -51,23 +84,19 @@ export default function Account() {
     setUploading(true)
     try {
       const ext      = file.name.split(".").pop() || "jpg"
-      const filePath = `${userId}/avatar.${ext}`
+      const filePath = `${userId}.${ext}`
 
       const { error: upErr } = await supabase.storage
-        .from("avatars")
+        .from("images")
         .upload(filePath, file, { upsert: true, cacheControl: "3600" })
       if (upErr) throw upErr
 
-      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath)
-      await supabase.from("profiles").update({ avatar: filePath }).eq("id", userId)
-
-      // キャッシュバスター付きURLで即時反映
+      const { data: urlData } = supabase.storage.from("images").getPublicUrl(filePath)
       const freshUrl = urlData.publicUrl + "?t=" + Date.now()
 
-      // キャッシュを更新（clearしない→他のキャッシュは維持）
+      await supabase.from("profiles").update({ avatar: freshUrl }).eq("id", userId)
       updateCachedAvatarUrl(freshUrl)
       setAvatarUrl(freshUrl)
-
     } catch (err) {
       console.error("アバター更新エラー:", err)
     } finally {
@@ -122,11 +151,49 @@ export default function Account() {
       </div>
 
       <div className="account-info-list">
-        <div className="account-info-item non-clickable">
+
+        {/* 名前 */}
+        <div className="account-info-item clickable" onClick={() => !editingName && setEditingName(true)}>
           <span className="info-label">名前</span>
-          <span className="info-value">{displayName || "未設定"}</span>
+          {editingName ? (
+            <div className="info-name-edit">
+              <input
+                ref={nameInputRef}
+                className="info-name-input"
+                value={nameInput}
+                onChange={e => setNameInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter") handleNameSave()
+                  if (e.key === "Escape") handleNameCancel()
+                }}
+                maxLength={20}
+                onClick={e => e.stopPropagation()}
+              />
+              <button
+                className="info-name-btn confirm"
+                onClick={e => { e.stopPropagation(); handleNameSave() }}
+                disabled={savingName || !nameInput.trim()}
+              >
+                <FiCheck size={16} />
+              </button>
+              <button
+                className="info-name-btn cancel"
+                onClick={e => { e.stopPropagation(); handleNameCancel() }}
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+          ) : (
+            <div className="info-right">
+              <span className="info-value">{displayName || "未設定"}</span>
+              <span className="info-arrow">›</span>
+            </div>
+          )}
         </div>
+
         <div className="info-divider" />
+
+        {/* メールアドレス */}
         <div className="account-info-item clickable" onClick={() => navigate("/mail-modify")}>
           <span className="info-label">メールアドレス</span>
           <div className="info-right">
@@ -134,7 +201,9 @@ export default function Account() {
             <span className="info-arrow">›</span>
           </div>
         </div>
+
         <div className="info-divider" />
+
         {!isGoogle && (
           <>
             <div className="account-info-item clickable" onClick={() => navigate("/password-modify")}>

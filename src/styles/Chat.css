@@ -1,53 +1,27 @@
 /* ===== chat.css ===== */
 
-/*
-  ===== 性別テーマの仕組み =====
-
-  バブルクラスは Chat.tsx の GENDER_THEME で決まる。
-  現在の対応:
-    自分が彼氏  → .bubble-me-boyfriend      （青紫系）
-    相手が彼女  → .bubble-partner-girlfriend  （ホットピンク）
-    自分が彼女  → .bubble-me-girlfriend      （ピンク系）  ← 将来用
-    相手が彼氏  → .bubble-partner-boyfriend   （青紫系）   ← 将来用
-
-  新しい性別テーマを追加したい場合:
-  1. 下の「将来用」クラスの色を決めて定義する
-  2. Chat.tsx の GENDER_THEME に新しいエントリを追加する
-  それだけで自動的に切り替わる
-*/
-
 :root {
     --pink: #f5317f;
     --pink-dark: #d41f6a;
     --pink-light: #ff6fa8;
     --pink-pale: #fce4ec;
     --pink-bg: #fff5f8;
-
-    /* 彼氏側バブル色（青紫） */
     --boyfriend-bubble: #c9bfed;
     --boyfriend-bubble-dark: #b0a3e0;
-
-    /* 彼女側バブル色（ホットピンク） */
     --girlfriend-bubble: #f5317f;
-
     --white: #ffffff;
     --text-main: #333333;
 }
 
-/* ===== 全体ラッパー ===== */
 .chat-wrapper {
     display: flex;
     flex-direction: column;
     height: 100dvh;
-    /* min-height→height: ビューポートに収める */
     overflow: hidden;
-    /* wrapper自体はスクロールしない */
     background: var(--white);
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
 
-/* ===== ヘッダーは AppHeader コンポーネント（appheader.css）で管理 ===== */
-/* チャット画面ではヘッダーを上部に固定する */
 .chat-wrapper .appheader,
 .chat-wrapper .appheader-scallop {
     position: sticky;
@@ -55,7 +29,6 @@
     z-index: 100;
 }
 
-/* ===== メッセージエリア ===== */
 .chat-messages {
     flex: 1;
     overflow-y: auto;
@@ -63,11 +36,9 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    /* 入力バー(約60px) + タブバー(約70px) の合計分だけ余白 */
     padding-bottom: 140px;
 }
 
-/* 上下装飾画像（imgタグに差し替えて使う） */
 .chat-deco-top {
     width: 100%;
     pointer-events: none;
@@ -80,20 +51,14 @@
     margin-top: 8px;
 }
 
-/* ===== メッセージ行 ===== */
 .chat-row {
     display: flex;
     align-items: flex-end;
     gap: 6px;
 }
 
-.row-partner {
-    justify-content: flex-start;
-}
-
-.row-me {
-    justify-content: flex-end;
-}
+.row-partner { justify-content: flex-start; }
+.row-me      { justify-content: flex-end; }
 
 .chat-row-icon {
     width: 32px;
@@ -118,13 +83,11 @@
     justify-content: center;
 }
 
-/* ===== バブルラッパー ===== */
 .chat-bubble-wrap {
     position: relative;
     max-width: 65%;
 }
 
-/* ===== バブル共通 ===== */
 .chat-bubble {
     padding: 10px 14px;
     border-radius: 20px;
@@ -134,36 +97,11 @@
     color: white;
 }
 
-/* ===== 自分側バブル: 彼氏テーマ（青紫） ===== */
-.bubble-me-boyfriend {
-    background: var(--boyfriend-bubble);
-    border-bottom-right-radius: 4px;
-}
+.bubble-me-boyfriend      { background: var(--boyfriend-bubble); border-bottom-right-radius: 4px; }
+.bubble-partner-girlfriend { background: var(--girlfriend-bubble); border-bottom-left-radius: 4px; }
+.bubble-me-girlfriend     { background: var(--pink-light); border-bottom-right-radius: 4px; }
+.bubble-partner-boyfriend  { background: var(--boyfriend-bubble); border-bottom-left-radius: 4px; }
 
-/* ===== 相手側バブル: 彼女テーマ（ホットピンク） ===== */
-.bubble-partner-girlfriend {
-    background: var(--girlfriend-bubble);
-    border-bottom-left-radius: 4px;
-}
-
-/* ===== 将来用: 自分が彼女テーマ（ピンク） ===== */
-/* Chat.tsx の GENDER_THEME["girlfriend"].myBubbleClass に対応 */
-.bubble-me-girlfriend {
-    background: var(--pink-light);
-    border-bottom-right-radius: 4px;
-}
-
-/* ===== 将来用: 相手が彼氏テーマ（青紫） ===== */
-/* Chat.tsx の GENDER_THEME["girlfriend"].partnerBubbleClass に対応 */
-.bubble-partner-boyfriend {
-    background: var(--boyfriend-bubble);
-    border-bottom-left-radius: 4px;
-}
-
-/* ===== 装飾画像 =====
-   deco-top-right    → 右上（彼女のバブル: 絆創膏）
-   deco-bottom-right → 右下（彼氏のバブル: ハート）
-*/
 .bubble-deco {
     position: absolute;
     width: 20px;
@@ -171,23 +109,18 @@
     object-fit: contain;
 }
 
-/* 彼女のバブル → 右上に絆創膏 */
-.deco-top-right {
-    top: -6px;
-    right: 4px;
-}
+.deco-top-right    { top: -6px; right: 4px; }
+.deco-bottom-right { bottom: -8px; right: -8px; }
 
-/* 彼氏のバブル → 右下にハート */
-.deco-bottom-right {
-    bottom: -8px;
-    right: -8px;
-}
-
-/* ===== 入力バー ===== */
-/* タブバーの高さ（約70px）の上に固定 */
+/* ===== 入力バー =====
+   bottom値はChat.tsxのインラインスタイルで動的に制御する。
+   ・キーボードなし: bottom: 70px（タブバー分）
+   ・キーボードあり: bottom: 8px（キーボード直上に貼り付く）
+   ここの値を変えたい場合はChat.tsxの inputBarStyle を編集する。
+*/
 .chat-input-bar {
     position: fixed;
-    bottom: 70px;
+    /* bottomはChat.tsxのinlineStyleで上書き */
     left: 0;
     right: 0;
     display: flex;
@@ -211,9 +144,7 @@
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
 
-.chat-input::placeholder {
-    color: #e8a0b8;
-}
+.chat-input::placeholder { color: #e8a0b8; }
 
 .chat-send-btn {
     width: 40px;
@@ -229,15 +160,6 @@
     transition: background 0.2s, transform 0.1s;
 }
 
-.chat-send-btn:hover:not(:disabled) {
-    background: var(--pink-dark);
-}
-
-.chat-send-btn:active:not(:disabled) {
-    transform: scale(0.92);
-}
-
-.chat-send-btn:disabled {
-    background: #f0c0d4;
-    cursor: not-allowed;
-}
+.chat-send-btn:hover:not(:disabled) { background: var(--pink-dark); }
+.chat-send-btn:active:not(:disabled) { transform: scale(0.92); }
+.chat-send-btn:disabled { background: #f0c0d4; cursor: not-allowed; }

@@ -27,7 +27,6 @@ export { default as AlbumEdit } from "../pages/AlbumEdit"
 export { default as AlbumDetail } from "../pages/AlbumDetail"  // 追加
 export { default as InvitePage } from '../pages/InvitePage'
 export { default as JoinPage } from '../pages/JoinPage'
-
 export { default as DiaryCalendar } from '../pages/DiaryCalendar'
 export { default as DiaryDetail } from '../pages/DiaryDetail'
 export { default as AlbumPage } from "../pages/AlbumPage"

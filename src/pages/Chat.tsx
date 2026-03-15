@@ -76,13 +76,8 @@ function ChatInner() {
     const messagesRef = useRef<Message[]>([]);
     const initializedRef = useRef(false);
 
-    useEffect(() => {
-        messagesRef.current = messages;
-    }, [messages]);
-
-    useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    useEffect(() => { messagesRef.current = messages; }, [messages]);
+    useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
     const generateAndSaveAdvice = useCallback(async (
         currentMessages: Message[],
@@ -118,17 +113,10 @@ ${conversationText}`;
 
             const { error } = await supabase
                 .from("chat_emotion_contexts")
-                .insert({
-                    user_id: myUserId,
-                    emotion_text: adviceText.trim(),
-                });
+                .insert({ user_id: myUserId, emotion_text: adviceText.trim() });
 
-            if (error) {
-                console.error("[Advice] INSERTエラー:", error.code, error.message);
-                return;
-            }
+            if (error) { console.error("[Advice] INSERTエラー:", error.code, error.message); return; }
             console.log("[Advice] DB保存成功!");
-
         } catch (e) {
             console.error("[Advice] 予期せぬエラー:", e);
         }
@@ -175,10 +163,8 @@ ${conversationText}`;
 
             if (partnerProfile) {
                 setPartnerName(partnerProfile.name ?? "パートナー");
-                // profiles.avatar には Setup で保存した完全なURLが入っているのでそのまま使う
-                if (partnerProfile.avatar) {
-                    setPartnerIcon(partnerProfile.avatar);
-                }
+                // profiles.avatar には完全なURLが入っているのでそのまま使う
+                if (partnerProfile.avatar) setPartnerIcon(partnerProfile.avatar);
             }
 
             const { data: rows } = await supabase
@@ -189,9 +175,7 @@ ${conversationText}`;
                 .order("send_at", { ascending: true })
                 .limit(100);
 
-            if (rows && isMounted) {
-                setMessages(rows.map(r => rowToMessage(r, userId)));
-            }
+            if (rows && isMounted) setMessages(rows.map(r => rowToMessage(r, userId)));
 
             if (channelRef.current) {
                 await supabase.removeChannel(channelRef.current);
@@ -201,52 +185,32 @@ ${conversationText}`;
             const channelName = `chat-${[userId, pId].sort().join("-")}`;
             channelRef.current = supabase
                 .channel(channelName)
-                .on(
-                    "postgres_changes",
-                    {
-                        event: "INSERT",
-                        schema: "public",
-                        table: "messages",
-                        filter: `sender=eq.${pId}`,
-                    },
-                    (payload) => {
-                        if (!isMounted) return;
-                        const newMsg = rowToMessage(
-                            payload.new as Record<string, string>,
-                            userId
-                        );
-                        setMessages(prev => {
-                            if (prev.find(m => m.id === newMsg.id)) return prev;
-                            return [...prev, newMsg];
-                        });
-                    }
-                )
-                .subscribe((status) => {
-                    console.log("[Chat] Realtime status:", status);
-                });
+                .on("postgres_changes", {
+                    event: "INSERT", schema: "public", table: "messages",
+                    filter: `sender=eq.${pId}`,
+                }, (payload) => {
+                    if (!isMounted) return;
+                    const newMsg = rowToMessage(payload.new as Record<string, string>, userId);
+                    setMessages(prev => {
+                        if (prev.find(m => m.id === newMsg.id)) return prev;
+                        return [...prev, newMsg];
+                    });
+                })
+                .subscribe((status) => { console.log("[Chat] Realtime status:", status); });
         };
 
         supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user && isMounted) {
-                init(session.user.id);
-            }
+            if (session?.user && isMounted) init(session.user.id);
         });
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
-                if (session?.user && isMounted && !initializedRef.current) {
-                    await init(session.user.id);
-                }
-            }
-        );
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            if (session?.user && isMounted && !initializedRef.current) await init(session.user.id);
+        });
 
         return () => {
             isMounted = false;
             subscription.unsubscribe();
-            if (channelRef.current) {
-                supabase.removeChannel(channelRef.current);
-                channelRef.current = null;
-            }
+            if (channelRef.current) { supabase.removeChannel(channelRef.current); channelRef.current = null; }
         };
     }, []);
 
@@ -260,19 +224,14 @@ ${conversationText}`;
 
         const tempId = `temp-${Date.now()}`;
         const optimisticMsg: Message = {
-            id: tempId,
-            sender: currentMyId,
-            text,
+            id: tempId, sender: currentMyId, text,
             time: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
             isMe: true,
         };
         setMessages(prev => [...prev, optimisticMsg]);
 
         const { data, error } = await supabase.from("messages").insert({
-            sender: currentMyId,
-            text,
-            send_at: new Date().toISOString(),
-            is_memory: false,
+            sender: currentMyId, text, send_at: new Date().toISOString(), is_memory: false,
         }).select("uid, sender, text, send_at").single();
 
         setSending(false);
@@ -285,9 +244,7 @@ ${conversationText}`;
         }
 
         if (data) {
-            setMessages(prev =>
-                prev.map(m => m.id === tempId ? rowToMessage(data, currentMyId) : m)
-            );
+            setMessages(prev => prev.map(m => m.id === tempId ? rowToMessage(data, currentMyId) : m));
         }
 
         if (myGenderRef.current === "girlfriend" && myIdRef.current) {
@@ -300,6 +257,14 @@ ${conversationText}`;
     };
 
     const theme = GENDER_THEME[myGender];
+
+    // ===== 入力バーのbottom値 =====
+    // キーボードなし: タブバー(約70px)の上に表示
+    // キーボードあり: キーボード直上に貼り付く(8px だけ隙間)
+    // ↓ この数値を変えると隙間を調整できる
+    const inputBarStyle = {
+        bottom: isFocused ? 0 : 70, // px
+    };
 
     return (
         <div className="chat-wrapper">
@@ -331,10 +296,7 @@ ${conversationText}`;
                             <div className="chat-bubble-wrap">
                                 <div className={`chat-bubble ${bubbleClass}`}>
                                     {msg.text.split("\n").map((line, j, arr) => (
-                                        <span key={j}>
-                                            {line}
-                                            {j < arr.length - 1 && <br />}
-                                        </span>
+                                        <span key={j}>{line}{j < arr.length - 1 && <br />}</span>
                                     ))}
                                 </div>
                                 {decoImage && (
@@ -347,7 +309,7 @@ ${conversationText}`;
                 <div ref={bottomRef} />
             </div>
 
-            <div className="chat-input-bar">
+            <div className="chat-input-bar" style={inputBarStyle}>
                 <input
                     className="chat-input"
                     type="text"

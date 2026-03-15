@@ -1,185 +1,197 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import type {
-  RealtimeChannel,
-  Session,
-  User,
+    RealtimeChannel,
+    Session,
+    User,
 } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import SageWidget from "../pages/SageWidget";
 import type { SageMessage } from "../pages/SageWidget";
 
 const SAGE_HIDDEN_PATHS = [
-  "/",
-  "/auth",
-  "/login",
-  "/register",
-  "/setup",
-  "/forgot-password",
-  "/authCallback",
-  "/signup-callback",
-  "/invite",
-  "/join",
-  "/logout",
+    "/",
+    "/auth",
+    "/login",
+    "/register",
+    "/setup",
+    "/forgot-password",
+    "/authCallback",
+    "/signup-callback",
+    "/invite",
+    "/join",
+    "/logout",
 ];
 
 type ProfileRow = {
-  gender: boolean | null;
+    gender: boolean | null;
+    partner: string | null;
 };
 
 type ChatEmotionContextRow = {
-  id: string;
-  user_id: string;
-  emotion_text: string | null;
-  created_at: string;
+    id: string;
+    user_id: string;
+    emotion_text: string | null;
+    created_at: string;
 };
 
 function SageOverlay() {
-  const location = useLocation();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+    const location = useLocation();
 
-  const [isBoyfriend, setIsBoyfriend] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(true);
+    const [user, setUser] = useState<User | null>(null);
+    const [authLoading, setAuthLoading] = useState(true);
 
-  const [sageMessage, setSageMessage] = useState<SageMessage | null>(null);
+    const [isBoyfriend, setIsBoyfriend] = useState(false);
+    const [profileLoading, setProfileLoading] = useState(true);
+    const [partnerId, setPartnerId] = useState<string | null>(null);
 
-  const lastIdRef = useRef<string | null>(null);
+    const [sageMessage, setSageMessage] = useState<SageMessage | null>(null);
 
-  const isHiddenPath = useMemo(
-    () => SAGE_HIDDEN_PATHS.includes(location.pathname),
-    [location.pathname]
-  );
+    const lastIdRef = useRef<string | null>(null);
 
-  // 1) auth状態は初回1回 + 変化時だけ追う
-  useEffect(() => {
-    let mounted = true;
+    const isHiddenPath = useMemo(
+        () => SAGE_HIDDEN_PATHS.includes(location.pathname),
+        [location.pathname]
+    );
 
-    const initAuth = async () => {
-      const { data, error } = await supabase.auth.getSession();
+    // 1) auth状態は初回1回 + 変化時だけ追う
+    useEffect(() => {
+        let mounted = true;
 
-      if (error) {
-        console.error("getSession error:", error);
-      }
+        const initAuth = async () => {
+            const { data, error } = await supabase.auth.getSession();
 
-      if (!mounted) return;
+            if (error) {
+                console.error("getSession error:", error);
+            }
 
-      const session: Session | null = data.session ?? null;
-      setUser(session?.user ?? null);
-      setAuthLoading(false);
-    };
+            if (!mounted) return;
 
-    initAuth();
+            const session: Session | null = data.session ?? null;
+            setUser(session?.user ?? null);
+            setAuthLoading(false);
+        };
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setAuthLoading(false);
-    });
+        initAuth();
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+            setAuthLoading(false);
+        });
 
-  // 2) userが変わった時だけ profiles.gender を読む
-  useEffect(() => {
-    if (authLoading) return;
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
+    }, []);
 
-    if (!user) {
-      setIsBoyfriend(false);
-      setProfileLoading(false);
-      return;
-    }
+    // 2) userが変わった時だけ profiles.gender / partner を読む
+    useEffect(() => {
+        if (authLoading) return;
 
-    let cancelled = false;
-
-    const fetchProfile = async () => {
-      setProfileLoading(true);
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("gender")
-        .eq("id", user.id)
-        .single();
-
-      if (cancelled) return;
-
-      if (error) {
-        console.error("profiles fetch error:", error);
-        setIsBoyfriend(false);
-        setProfileLoading(false);
-        return;
-      }
-
-      const profile = data as ProfileRow | null;
-      setIsBoyfriend(profile?.gender === false);
-      setProfileLoading(false);
-    };
-
-    fetchProfile();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user, authLoading]);
-
-  // 3) 彼氏 && 対象ページの時だけ realtime 購読
-  useEffect(() => {
-    if (authLoading) return;
-    if (profileLoading) return;
-    if (!user) return;
-    if (!isBoyfriend) return;
-    if (isHiddenPath) return;
-
-    let channel: RealtimeChannel | null = null;
-
-    channel = supabase
-      .channel(`chat-emotion-contexts-${user.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_emotion_contexts",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const row = payload.new as ChatEmotionContextRow;
-
-          if (!row) return;
-          if (!row.emotion_text) return;
-          if (String(row.id) === lastIdRef.current) return;
-
-          lastIdRef.current = String(row.id);
-
-          setSageMessage({
-            id: String(row.id),
-            text: row.emotion_text,
-            type: "suggestion",
-          });
+        if (!user) {
+            setIsBoyfriend(false);
+            setPartnerId(null);
+            setProfileLoading(false);
+            return;
         }
-      )
-      .subscribe((status) => {
-        console.log("[SageOverlay] realtime status:", status);
-      });
 
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-    };
-  }, [user, authLoading, profileLoading, isBoyfriend, isHiddenPath]);
+        let cancelled = false;
 
-  if (isHiddenPath) return null;
-  if (authLoading) return null;
-  if (profileLoading) return null;
-  if (!isBoyfriend) return null;
+        const fetchProfile = async () => {
+            setProfileLoading(true);
 
-  return <SageWidget message={sageMessage} isBoyfriend={isBoyfriend} />;
+            const { data, error } = await supabase
+                .from("profiles")
+                .select("gender, partner")
+                .eq("id", user.id)
+                .single();
+
+            if (cancelled) return;
+
+            if (error) {
+                console.error("profiles fetch error:", error);
+                setIsBoyfriend(false);
+                setPartnerId(null);
+                setProfileLoading(false);
+                return;
+            }
+
+            const profile = data as ProfileRow | null;
+            setIsBoyfriend(profile?.gender === false);
+            setPartnerId(profile?.partner ?? null);
+            setProfileLoading(false);
+            console.log("[SageOverlay] user.id =", user?.id);
+            console.log("[SageOverlay] isBoyfriend =", isBoyfriend);
+            console.log("[SageOverlay] partnerId =", partnerId);
+            console.log("[SageOverlay] isHiddenPath =", isHiddenPath);
+        };
+
+        fetchProfile();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [user, authLoading]);
+
+    // 3) 彼氏 && 対象ページの時だけ realtime 購読
+    //    girlfriend の user_id で保存された advice を、
+    //    boyfriend 側が partnerId 経由で受け取る
+    useEffect(() => {
+        if (authLoading) return;
+        if (profileLoading) return;
+        if (!user) return;
+        if (!isBoyfriend) return;
+        if (!partnerId) return;
+        if (isHiddenPath) return;
+
+        let channel: RealtimeChannel | null = null;
+
+        channel = supabase
+            .channel(`chat-emotion-contexts-${user.id}-${partnerId}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "chat_emotion_contexts",
+                    filter: `user_id=eq.${partnerId}`,
+                },
+                (payload) => {
+                    const row = payload.new as ChatEmotionContextRow;
+
+                    if (!row) return;
+                    if (!row.emotion_text) return;
+                    if (String(row.id) === lastIdRef.current) return;
+
+                    lastIdRef.current = String(row.id);
+
+                    setSageMessage({
+                        id: String(row.id),
+                        text: row.emotion_text,
+                    });
+                }
+            )
+            .subscribe((status) => {
+                console.log("[SageOverlay] realtime status:", status);
+            });
+
+        return () => {
+            if (channel) {
+                supabase.removeChannel(channel);
+            }
+        };
+    }, [user, authLoading, profileLoading, isBoyfriend, partnerId, isHiddenPath]);
+
+    if (isHiddenPath) return null;
+    if (authLoading) return null;
+    if (profileLoading) return null;
+    if (!isBoyfriend) return null;
+
+    return <SageWidget message={sageMessage} isBoyfriend={isBoyfriend} />;
 }
 
 export default SageOverlay;

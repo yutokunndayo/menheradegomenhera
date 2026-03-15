@@ -12,14 +12,22 @@
 }
 
 /* ===== ラッパー ===== */
-/* スクロール禁止 — 全コンテンツを100dvhに収める */
+/* キーボード表示時もヘッダーが上に残るよう overflow を許可 */
 .diary-wrapper {
-    height: 100dvh;
+    min-height: 100dvh;
     background: var(--white);
     font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+}
+
+/* ヘッダーを常に最上部に固定 */
+.diary-wrapper .appheader,
+.diary-wrapper .appheader-scallop {
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 /* ===== 感情選択エリア ===== */
@@ -30,8 +38,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 28px;
-    /* 16px → 28px: 絵文字とスライダーの間隔 */
+    gap: 28px;              /* 16px → 28px: 絵文字とスライダーの間隔 */
     flex: 1;
     min-height: 0;
     padding-bottom: 16px;
@@ -81,15 +88,12 @@
 .diary-meter-track,
 .diary-meter-fill,
 .diary-meter-ticks,
-.diary-meter-tick {
-    display: none;
-}
+.diary-meter-tick { display: none; }
 
 /* ===== 入力エリア ===== */
 .diary-input-area {
     margin: 0 16px;
-    margin-top: 6px;
-    /* 上の余白を追加 */
+    margin-top: 6px;       /* 上の余白を追加 */
     background: var(--pink-bg);
     border-radius: 14px;
     padding: 10px 14px;
@@ -123,8 +127,7 @@
 
 /* ===== 送信ボタンラッパー ===== */
 .diary-submit-wrap {
-    padding: 10px 16px 0;
-    /* 上の余白を増やす */
+    padding: 10px 16px 0;   /* 上の余白を増やす */
     flex-shrink: 0;
 }
 
@@ -160,8 +163,7 @@
 /* ===== グラフエリア ===== */
 /* 固定高さで小さく表示 */
 .diary-graph-area {
-    margin: 10px 16px 80px;
-    /* 上の余白を追加 */
+    margin: 10px 16px 90px;  /* 下はタブバー分の余白 */
     background: var(--pink-bg);
     border-radius: 14px;
     padding: 10px 14px;
@@ -219,13 +221,8 @@
     flex-shrink: 0;
 }
 
-.legend-dot--pink {
-    background: var(--pink);
-}
-
-.legend-dot--cyan {
-    background: var(--cyan);
-}
+.legend-dot--pink  { background: var(--pink); }
+.legend-dot--cyan  { background: var(--cyan); }
 
 /* グラフSVG */
 .diary-graph-svg {
@@ -306,16 +303,14 @@
 }
 
 .diary-emotion-img {
-    width: 58px;
-    /* 44px → 58px */
+    width: 58px;       /* 44px → 58px */
     height: 58px;
     object-fit: contain;
     transition: all 0.25s ease;
 }
 
 .diary-emotion-item.selected .diary-emotion-img {
-    width: 76px;
-    /* 58px → 76px */
+    width: 76px;       /* 58px → 76px */
     height: 76px;
 }
 
@@ -362,22 +357,15 @@
     padding: 4px 0;
 }
 
-.dcal-weekday.sat {
-    color: var(--pink);
-}
-
-.dcal-weekday.sun {
-    color: #ef5350;
-}
+.dcal-weekday.sat { color: var(--pink); }
+.dcal-weekday.sun { color: #ef5350; }
 
 /* グリッド — 残り高さを全部使って縦均等配置 */
 .dcal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    grid-template-rows: repeat(6, 1fr);
-    /* 6行を均等に割り付け */
-    padding: 2px 8px 80px;
-    /* タブバー分の下余白 */
+    grid-template-rows: repeat(6, 1fr);   /* 6行を均等に割り付け */
+    padding: 2px 8px 80px;                /* タブバー分の下余白 */
     flex: 1;
     min-height: 0;
 }
@@ -408,21 +396,10 @@
     font-weight: 700;
 }
 
-.dcal-day.sat:not(.today) .dcal-day-num {
-    color: var(--pink);
-}
-
-.dcal-day.sun:not(.today) .dcal-day-num {
-    color: #ef5350;
-}
-
-.dcal-day.other-month .dcal-day-num {
-    color: #dddddd;
-}
-
-.dcal-day.other-month {
-    pointer-events: none;
-}
+.dcal-day.sat:not(.today) .dcal-day-num { color: var(--pink); }
+.dcal-day.sun:not(.today) .dcal-day-num { color: #ef5350; }
+.dcal-day.other-month .dcal-day-num     { color: #dddddd; }
+.dcal-day.other-month                   { pointer-events: none; }
 
 .dcal-emotions {
     display: flex;

@@ -72,6 +72,27 @@ function DiaryPage() {
             if (profile.partner) setPartnerId(profile.partner);
             setGenderReady(true);
 
+            // ===== 今日の記録を読み込んで初期値にセット =====
+            // タイムゾーン問題を避けるためローカル日付でフィルタ
+            const now   = new Date();
+            const ymd   = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+            const from  = `${ymd}T00:00:00`;
+            const to    = `${ymd}T23:59:59`;
+
+            const { data: todayLog } = await supabase
+                .from("diary_entries")
+                .select("emotion, text")
+                .eq("user_id", profile.id)
+                .gte("created_at", from)
+                .lte("created_at", to)
+                .single();
+
+            if (todayLog) {
+                // 今日すでに送信済み → その値を初期表示
+                setSelectedIndex(todayLog.emotion as EmotionId);
+                setComment(todayLog.text ?? EMOTIONS[todayLog.emotion].name);
+            }
+
             // ===== 過去7日のスコアを取得 =====
             const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -117,17 +138,18 @@ function DiaryPage() {
     const handleSubmit = async () => {
         if (!myId) return;
         try {
-            // 今日すでに送信済みか確認（1日1回制限）
-            const today = new Date();
-            const from  = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-            const to    = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+            // ローカル日付でフィルタ（タイムゾーンズレ防止）
+            const now  = new Date();
+            const ymd  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+            const from = `${ymd}T00:00:00`;
+            const to   = `${ymd}T23:59:59`;
 
             const { data: existing } = await supabase
                 .from("diary_entries")
                 .select("id")
                 .eq("user_id", myId)
                 .gte("created_at", from)
-                .lt("created_at", to)
+                .lte("created_at", to)
                 .single();
 
             if (existing) {

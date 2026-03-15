@@ -1,6 +1,6 @@
 import { FiUser } from "react-icons/fi";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi2";
-import "./Appheader.css";
+import "./AppHeader.css";
 
 // ===== 型定義 =====
 

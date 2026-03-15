@@ -31,6 +31,8 @@ import {
   DiaryCalendar,
   DiaryDetail,
   DeleteAccountModal,
+  MailModify,
+  PasswordModify
 } from './types/index';
 
 function App() {
@@ -88,10 +90,17 @@ function App() {
             {/* アルバムの新規作成画面 */}
             <Route path="/album-new-create" element={<AlbumNewCreate />} />.
 
+            {/* アルバムの最終確認画面 */}
             <Route path="/album-edit" element={<AlbumEdit />} />
 
             {/* アルバム詳細画面 */}
             <Route path='/album-detail' element={<AlbumDetail />} />
+
+            {/* メールアドレスの変更画面 */}
+            <Route path="/mail-modify" element={<MailModify />} />
+
+            {/* パスワードの変更画面 */}
+            <Route path="/password-modify" element={<PasswordModify />} />
 
           </Routes>
 

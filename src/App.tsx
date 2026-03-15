@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // ↓ GeminiDemo を直接読み込む場合はこちらを残します
 import GeminiDemo from './pages/test';
 import PartnerGuard from './components/PartnerGuard'
+import SageOverlay from './components/SageOverlay'
 import {
   Home,
   Example,
@@ -98,6 +99,9 @@ function App() {
 
 
         </PartnerGuard>
+
+        {/* 仙人ウィジェット — Routerの中・mainの中に置く */}
+        <SageOverlay />
       </main>
     </Router>
 

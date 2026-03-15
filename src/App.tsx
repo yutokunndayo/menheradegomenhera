@@ -36,8 +36,12 @@ function App() {
     // GeminiProvider でアプリ全体を囲みます
 
     <Router>
+
+
+
+      
       <main>
-        <PartnerGuard>
+      
           <Routes>
             <Route path='/' element={<TitlePage />} />
             <Route path='/auth' element={<AuthSelect />} />
@@ -85,7 +89,10 @@ function App() {
           <Route path='/album-detail' element={<AlbumDetail />} />
 
           </Routes>
-        </PartnerGuard>
+       
+
+
+
       </main>
     </Router>
 

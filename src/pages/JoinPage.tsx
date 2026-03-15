@@ -11,7 +11,7 @@ function JoinPage() {
   const ran = useRef(false);
 
   const fromId = params.get("from");
-  const [status, setStatus] = useState<"loading" | "success" | "error" | "already" | "unauthenticated">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error" | "already">("loading");
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
@@ -20,6 +20,12 @@ function JoinPage() {
 
     const connect = async () => {
       try {
+        if (!fromId) {
+          setErrorMsg("無効な招待リンクです");
+          setStatus("error");
+          return;
+        }
+
         const {
           data: { user },
           error: userError,
@@ -27,19 +33,21 @@ function JoinPage() {
 
         if (userError) throw userError;
 
+        // auth user がないなら login へ
         if (!user) {
-          sessionStorage.setItem("pendingJoin", `/join?from=${fromId}`);
-          setStatus("unauthenticated");
+          sessionStorage.setItem("pendingFromId", fromId);
+          navigate("/auth", { replace: true });
           return;
         }
 
-        if (!fromId || fromId === user.id) {
-          setErrorMsg("無効な招待リンクです");
+        // 自分自身の招待リンクは不可
+        if (fromId === user.id) {
+          setErrorMsg("自分自身の招待リンクには参加できません");
           setStatus("error");
           return;
         }
 
-        // 自分がすでにペア済みかだけ確認
+        // profiles がなければ「未ログイン相当」とみなして login へ
         const { data: myProfile, error: myProfileError } = await supabase
           .from("profiles")
           .select("partner")
@@ -49,17 +57,19 @@ function JoinPage() {
         if (myProfileError) throw myProfileError;
 
         if (!myProfile) {
-          setErrorMsg("プロフィールが見つかりません");
-          setStatus("error");
+          sessionStorage.setItem("pendingFromId", fromId);
+          navigate("/auth", { replace: true });
           return;
         }
 
+        // すでにペア済みなら chat へ
         if (myProfile.partner) {
           setStatus("already");
           setTimeout(() => navigate("/chat", { replace: true }), 1500);
           return;
         }
 
+        // ペア接続
         const { error: rpcError } = await supabase.rpc("connect_partners", {
           inviter_id: fromId,
         });
@@ -90,21 +100,6 @@ function JoinPage() {
             </>
           )}
 
-          {status === "unauthenticated" && (
-            <>
-              <div className="join-icon join-icon--error">!</div>
-              <p className="join-status-text">ログインが必要です</p>
-              <p className="join-status-sub">ログイン後に招待への参加を続けられます</p>
-              <button
-                className="btn-primary"
-                onClick={() => navigate("/login")}
-                style={{ marginTop: 16 }}
-              >
-                ログインへ
-              </button>
-            </>
-          )}
-
           {status === "success" && (
             <>
               <div className="join-icon join-icon--success">♡</div>
@@ -127,7 +122,7 @@ function JoinPage() {
               <p className="join-status-text join-status-text--error">{errorMsg}</p>
               <button
                 className="btn-primary"
-                onClick={() => navigate("/invite")}
+                onClick={() => navigate("/invite", { replace: true })}
                 style={{ marginTop: 16 }}
               >
                 招待画面に戻る

@@ -15,70 +15,110 @@ function InvitePage() {
     const [qrDataUrl, setQrDataUrl] = useState("");
     const [copied, setCopied] = useState(false);
     const [loading, setLoading] = useState(true);
-    // パートナーが接続したかどうか
     const [connected, setConnected] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("");
 
     useEffect(() => {
         const init = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) { navigate("/Auth", { replace: true }); return; }
-
-            // すでにパートナーが設定済みならチャットへ
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("partner")
-                .eq("id", user.id)
-                .single();
-
-            if (profile?.partner) {
-                navigate("/chat", { replace: true });
-                return;
-            }
-
-            // 招待URLを生成
-            // window.location.origin はデプロイ環境で自動的に本番URLになる
-            const url = `${window.location.origin}/join?from=${user.id}`;
-            setInviteUrl(url);
-
-            // QRコード生成
             try {
-                const dataUrl = await QRCode.toDataURL(url, {
-                    width: 240,
-                    margin: 2,
-                    color: { dark: "#f5317f", light: "#ffffff" },
-                });
-                setQrDataUrl(dataUrl);
-            } catch (e) {
-                console.error("QR生成エラー:", e);
-            }
+                const {
+                    data: { user },
+                    error: userError,
+                } = await supabase.auth.getUser();
 
-            setLoading(false);
+                if (userError) throw userError;
 
-            // ===== パートナー接続をポーリングで監視 =====
-            // 3秒ごとにprofilesのpartnerカラムを確認する
-            // パートナーが /join にアクセスして接続されると partner が埋まる
-            pollingRef.current = setInterval(async () => {
-                const { data } = await supabase
+                if (!user) {
+                    navigate("/login", { replace: true });
+                    return;
+                }
+
+                const pendingFromId = sessionStorage.getItem("pendingFromId");
+
+                const { data: profile, error: profileError } = await supabase
                     .from("profiles")
                     .select("partner")
                     .eq("id", user.id)
                     .single();
 
-                if (data?.partner) {
-                    // パートナーが接続された！
-                    clearInterval(pollingRef.current!);
-                    setConnected(true);
-                    // 少し待ってからチャットへ
-                    setTimeout(() => navigate("/chat", { replace: true }), 1500);
+                if (profileError) throw profileError;
+
+                // すでにペア済みなら chat へ
+                if (profile?.partner) {
+                    sessionStorage.removeItem("pendingFromId");
+                    navigate("/chat", { replace: true });
+                    return;
                 }
-            }, 3000);
+
+                // 未処理の招待リンク情報があれば、そのままペア接続を実行
+                if (pendingFromId) {
+                    if (pendingFromId === user.id) {
+                        sessionStorage.removeItem("pendingFromId");
+                        setErrorMsg("自分自身の招待リンクには参加できません");
+                        setLoading(false);
+                        return;
+                    }
+
+                    const { error: rpcError } = await supabase.rpc("connect_partners", {
+                        inviter_id: pendingFromId,
+                    });
+
+                    if (rpcError) throw rpcError;
+
+                    sessionStorage.removeItem("pendingFromId");
+                    setConnected(true);
+                    setLoading(false);
+
+                    setTimeout(() => navigate("/chat", { replace: true }), 1500);
+                    return;
+                }
+
+                // 通常の招待画面
+                const url = `${window.location.origin}/join?from=${user.id}`;
+                setInviteUrl(url);
+
+                try {
+                    const dataUrl = await QRCode.toDataURL(url, {
+                        width: 240,
+                        margin: 2,
+                        color: { dark: "#f5317f", light: "#ffffff" },
+                    });
+                    setQrDataUrl(dataUrl);
+                } catch (e) {
+                    console.error("QR生成エラー:", e);
+                }
+
+                setLoading(false);
+
+                // パートナー接続監視
+                pollingRef.current = setInterval(async () => {
+                    const { data } = await supabase
+                        .from("profiles")
+                        .select("partner")
+                        .eq("id", user.id)
+                        .single();
+
+                    if (data?.partner) {
+                        if (pollingRef.current) {
+                            clearInterval(pollingRef.current);
+                        }
+                        setConnected(true);
+                        setTimeout(() => navigate("/chat", { replace: true }), 1500);
+                    }
+                }, 3000);
+            } catch (e: any) {
+                console.error("invite init error:", e);
+                setErrorMsg(e?.message ?? "処理に失敗しました");
+                setLoading(false);
+            }
         };
 
         init();
 
-        // クリーンアップ（画面を離れたらポーリング停止）
         return () => {
-            if (pollingRef.current) clearInterval(pollingRef.current);
+            if (pollingRef.current) {
+                clearInterval(pollingRef.current);
+            }
         };
     }, [navigate]);
 
@@ -104,41 +144,58 @@ function InvitePage() {
             <div className="auth-container">
                 <div className="auth-section">
                     <div className="invite-section">
-
-                        {connected ? (
-                            // パートナー接続完了
+                        {loading ? (
+                            <>
+                                <div className="join-spinner" />
+                                <p className="invite-title">処理中...</p>
+                            </>
+                        ) : errorMsg ? (
+                            <>
+                                <div className="join-icon join-icon--error">!</div>
+                                <p className="invite-title">エラーが発生しました</p>
+                                <p className="invite-desc">{errorMsg}</p>
+                                <button
+                                    className="invite-copy-btn"
+                                    onClick={() => navigate("/login", { replace: true })}
+                                >
+                                    ログインへ
+                                </button>
+                            </>
+                        ) : connected ? (
                             <>
                                 <div className="join-icon join-icon--success">♡</div>
                                 <p className="invite-title">ペアになりました！</p>
                                 <p className="invite-desc">チャット画面へ移動します</p>
                             </>
                         ) : (
-                            // 待機中
                             <>
                                 <p className="invite-title">パートナーを招待しよう</p>
                                 <p className="invite-desc">
-                                    下のリンクまたはQRコードをパートナーに送ってね<br />
-                                    <span className="invite-waiting">パートナーが参加するまで待機中...</span>
+                                    下のリンクまたはQRコードをパートナーに送ってね
+                                    <br />
+                                    <span className="invite-waiting">
+                                        パートナーが参加するまで待機中...
+                                    </span>
                                 </p>
 
-                                {/* QRコード */}
                                 <div className="invite-qr-wrap">
-                                    {loading ? (
-                                        <div className="invite-qr-placeholder">
-                                            <div className="join-spinner" />
-                                        </div>
-                                    ) : qrDataUrl ? (
-                                        <img src={qrDataUrl} alt="招待QRコード" className="invite-qr" />
+                                    {qrDataUrl ? (
+                                        <img
+                                            src={qrDataUrl}
+                                            alt="招待QRコード"
+                                            className="invite-qr"
+                                        />
                                     ) : (
-                                        <div className="invite-qr-placeholder">QR生成に失敗しました</div>
+                                        <div className="invite-qr-placeholder">
+                                            QR生成に失敗しました
+                                        </div>
                                     )}
                                 </div>
 
-                                {/* URLコピーボタン */}
                                 <button
                                     className={`invite-copy-btn ${copied ? "copied" : ""}`}
                                     onClick={handleCopy}
-                                    disabled={loading}
+                                    disabled={!inviteUrl}
                                 >
                                     {copied ? (
                                         <>
@@ -155,7 +212,6 @@ function InvitePage() {
 
                                 <p className="invite-url-text">{inviteUrl}</p>
 
-                                {/* パートナーが来るまで次に進めない旨を表示 */}
                                 <p className="invite-notice">
                                     ※ パートナーが参加するまでアプリの機能は使えません
                                 </p>

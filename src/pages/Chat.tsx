@@ -238,7 +238,7 @@ ${conversationText}`;
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, session) => {
+            async ( _event, session) => {
                 if (session?.user && isMounted && !initializedRef.current) {
                     await init(session.user.id);
                 }

@@ -159,3 +159,50 @@
   color: #aaa;
   margin: 4px 0 0;
 }
+
+/* 名前編集 */
+.info-name-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.info-name-input {
+  border: 1px solid #f5317f;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+  width: 140px;
+  font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+.info-name-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.info-name-btn.confirm {
+  background: #f5317f;
+  color: white;
+}
+
+.info-name-btn.confirm:disabled {
+  background: #f0c0d4;
+  cursor: not-allowed;
+}
+
+.info-name-btn.cancel {
+  background: #eee;
+  color: #888;
+}

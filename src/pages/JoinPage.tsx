@@ -6,9 +6,9 @@ import "../styles/login.css";
 import "../styles/invite.css";
 
 function JoinPage() {
-    const navigate = useNavigate();
-    const [params] = useSearchParams();
-    const ran = useRef(false);
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const ran = useRef(false);
 
     // URLパラメータから招待者のUUIDを取得
     // 例: /join?from=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
@@ -17,133 +17,115 @@ function JoinPage() {
     const [status, setStatus] = useState<"loading" | "success" | "error" | "already">("loading");
     const [errorMsg, setErrorMsg] = useState("");
 
-    console.log("招待元ID:", fromId);
+  useEffect(() => {
+    if (ran.current) return;
+    ran.current = true;
 
-    useEffect(() => {
-        if (ran.current) return;
-        ran.current = true;
+    const connect = async () => {
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-        const connect = async () => {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
+        if (userError) throw userError;
 
-                // 未ログインの場合はAuthへ（招待URLをリダイレクト先として保持）
-                if (!user) {
-                    // ログイン後に自動でこのページに戻れるようにURLを保存
-                    sessionStorage.setItem("pendingJoin", `/join?from=${fromId}`);
-                    navigate("/Auth", { replace: true });
-                    return;
-                }
+        if (!user) {
+          sessionStorage.setItem("pendingJoin", `/join?from=${fromId}`);
+          navigate("/Auth", { replace: true });
+          return;
+        }
 
-                // 無効な招待リンク
-                if (!fromId || fromId === user.id) {
-                    setErrorMsg("無効な招待リンクです");
-                    setStatus("error");
-                    return;
-                }
+        if (!fromId || fromId === user.id) {
+          setErrorMsg("無効な招待リンクです");
+          setStatus("error");
+          return;
+        }
 
-                // 自分のプロフィールを確認
-                const { data: myProfile } = await supabase
-                    .from("profiles")
-                    .select("partner")
-                    .eq("id", user.id)
-                    .single();
+        // 自分がすでにペア済みかだけ確認
+        const { data: myProfile, error: myProfileError } = await supabase
+          .from("profiles")
+          .select("partner")
+          .eq("id", user.id)
+          .maybeSingle();
 
-                // すでにパートナー設定済み
-                if (myProfile?.partner) {
-                    setStatus("already");
-                    setTimeout(() => navigate("/chat", { replace: true }), 2000);
-                    return;
-                }
+        if (myProfileError) throw myProfileError;
 
-                // 招待者が存在するか確認
-                const { data: fromProfile } = await supabase
-                    .from("profiles")
-                    .select("id")
-                    .eq("id", fromId)
-                    .single();
+        if (!myProfile) {
+          setErrorMsg("プロフィールが見つかりません");
+          setStatus("error");
+          return;
+        }
 
-                console.log("招待者プロフィール:", fromProfile);
+        if (myProfile.partner) {
+          setStatus("already");
+          setTimeout(() => navigate("/chat", { replace: true }), 1500);
+          return;
+        }
 
-                if (!fromProfile) {
-                    setErrorMsg("招待者が見つかりません");
-                    setStatus("error");
-                    return;
-                }
+        const { error: rpcError } = await supabase.rpc("connect_partners", {
+          inviter_id: fromId,
+        });
 
-                // ===== お互いのpartnerカラムを更新 =====
-                // テーブル定義: profiles.partner UUID（相手のid）
-                const { error: e1 } = await supabase
-                    .from("profiles")
-                    .update({ partner: fromId })
-                    .eq("id", user.id);
-                if (e1) throw e1;
+        if (rpcError) throw rpcError;
 
-                const { error: e2 } = await supabase
-                    .from("profiles")
-                    .update({ partner: user.id })
-                    .eq("id", fromId);
-                if (e2) throw e2;
+        setStatus("success");
+        setTimeout(() => navigate("/chat", { replace: true }), 1500);
+      } catch (e: any) {
+        console.error("join error:", e);
+        setErrorMsg(e?.message ?? "接続に失敗しました");
+        setStatus("error");
+      }
+    };
 
-                setStatus("success");
-                setTimeout(() => navigate("/chat", { replace: true }), 2000);
+    connect();
+  }, [navigate, fromId]);
 
-            } catch (e) {
-                console.error("招待エラー:", e);
-                setErrorMsg("接続に失敗しました");
-                setStatus("error");
-            }
-        };
+  return (
+    <div className="auth-wrapper">
+      <AuthHeader />
+      <div className="auth-container">
+        <div className="join-status-area">
+          {status === "loading" && (
+            <>
+              <div className="join-spinner" />
+              <p className="join-status-text">接続中...</p>
+            </>
+          )}
 
-        connect();
-    }, [navigate, fromId]);
+          {status === "success" && (
+            <>
+              <div className="join-icon join-icon--success">♡</div>
+              <p className="join-status-text">ペアになりました！</p>
+              <p className="join-status-sub">チャット画面へ移動します</p>
+            </>
+          )}
 
-    return (
-        <div className="auth-wrapper">
-            <AuthHeader />
+          {status === "already" && (
+            <>
+              <div className="join-icon join-icon--success">♡</div>
+              <p className="join-status-text">すでにペアが設定されています</p>
+              <p className="join-status-sub">チャット画面へ移動します</p>
+            </>
+          )}
 
-            <div className="auth-container">
-                <div className="join-status-area">
-                    {status === "loading" && (
-                        <>
-                            <div className="join-spinner" />
-                            <p className="join-status-text">接続中...</p>
-                        </>
-                    )}
-
-                    {status === "success" && (
-                        <>
-                            <div className="join-icon join-icon--success">♡</div>
-                            <p className="join-status-text">ペアになりました！</p>
-                            <p className="join-status-sub">チャット画面へ移動します</p>
-                        </>
-                    )}
-
-                    {status === "already" && (
-                        <>
-                            <div className="join-icon join-icon--success">♡</div>
-                            <p className="join-status-text">すでにペアが設定されています</p>
-                            <p className="join-status-sub">チャット画面へ移動します</p>
-                        </>
-                    )}
-
-                    {status === "error" && (
-                        <>
-                            <div className="join-icon join-icon--error">!</div>
-                            <p className="join-status-text join-status-text--error">{errorMsg}</p>
-                            <button
-                                className="btn-primary"
-                                onClick={() => navigate("/invite")}
-                                style={{ marginTop: 16 }}
-                            >
-                                招待画面に戻る
-                            </button>
-                        </>
-                    )}
-                </div>
-            </div>
+          {status === "error" && (
+            <>
+              <div className="join-icon join-icon--error">!</div>
+              <p className="join-status-text join-status-text--error">{errorMsg}</p>
+              <button
+                className="btn-primary"
+                onClick={() => navigate("/invite")}
+                style={{ marginTop: 16 }}
+              >
+                招待画面に戻る
+              </button>
+            </>
+          )}
         </div>
-    );
+      </div>
+    </div>
+  );
 }
 
 export default JoinPage;

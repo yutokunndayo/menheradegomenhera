@@ -29,7 +29,7 @@ import {
   AlbumDetail,
   DiaryCalendar,
   DiaryDetail,
-  DeleteAccountModal
+  DeleteAccountModal,
 } from './types/index';
 
 function App() {
@@ -43,6 +43,7 @@ function App() {
 
       <main>
         <PartnerGuard>
+
           <Routes>
             <Route path='/' element={<TitlePage />} />
             <Route path='/auth' element={<AuthSelect />} />

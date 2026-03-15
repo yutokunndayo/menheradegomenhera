@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom"
+import { useState } from "react"
+import { supabase } from "../lib/supabase"
 
 import HomePageHeader from "../components/HomePageHeader"
 import TabBar from "../components/TabBar"
@@ -6,23 +8,46 @@ import TabBar from "../components/TabBar"
 import "../styles/DeleteAccountModal.css"
 
 export default function DeleteAccountModal() {
-
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+
+  const handleDeleteAccount = async () => {
+    if (loading) return;
+
+    try {
+      setLoading(true);
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log("sessionData:", sessionData);
+      console.log("sessionError:", sessionError);
+      console.log("has access token:", !!sessionData.session?.access_token);
+
+      const { data, error } = await supabase.functions.invoke("delete-account");
+
+      if (error) {
+        console.error(error);
+        alert("削除に失敗しました");
+        return;
+      }
+
+      console.log(data);
+      await supabase.auth.signOut();
+      navigate("/login");
+    } catch (e) {
+      console.error(e);
+      alert("削除に失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-
     <div className="page">
-
-      {/* ヘッダー + プロフィール */}
       <HomePageHeader username="彼女ちゃん" />
 
-      {/* 背景暗くする */}
       <div className="overlay"></div>
 
-
-      {/* モーダル */}
       <div className="modal">
-
         <h2 className="modal-title">
           アカウントの削除
         </h2>
@@ -33,30 +58,25 @@ export default function DeleteAccountModal() {
         </p>
 
         <div className="modal-buttons">
-
           <button
             className="cancel-button"
             onClick={() => navigate("/home")}
+            disabled={loading}
           >
             キャンセル
           </button>
 
           <button
             className="ok-button"
-            onClick={() => navigate("/login")}
+            onClick={handleDeleteAccount}
+            disabled={loading}
           >
-            OK
+            {loading ? "削除中..." : "OK"}
           </button>
-
         </div>
-
       </div>
 
-
-      {/* タブバー */}
       <TabBar />
-
     </div>
-
   )
 }

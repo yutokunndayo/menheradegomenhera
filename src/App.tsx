@@ -85,7 +85,7 @@ function App() {
             <Route path='/delete-account' element={<DeleteAccountModal />} />
 
             {/* アルバムの新規作成画面 */}
-            <Route path="/album-new-create" element={<AlbumNewCreate />} />.
+            <Route path="/album-new-create" element={<AlbumNewCreate />} />
 
             <Route path="/album-edit" element={<AlbumEdit />} />
 

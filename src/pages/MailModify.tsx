@@ -13,7 +13,7 @@ export default function MailModify() {
   const [currentEmail, setCurrentEmail] = useState("")
   const [newEmail, setNewEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [successMsg, setSuccessMsg] = useState("")
+  const [showModal, setShowModal] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
 
 
@@ -34,7 +34,6 @@ export default function MailModify() {
 
   const handleSubmit = async () => {
 
-    setSuccessMsg("")
     setErrorMsg("")
 
     if (!newEmail.trim()) {
@@ -58,8 +57,12 @@ export default function MailModify() {
       return
     }
 
-    setSuccessMsg("確認メールを送信しました。メールを確認してください。")
-    setNewEmail("")
+    // 成功 → モーダルを表示して2秒後にアカウント画面へ
+    setShowModal(true)
+
+    setTimeout(() => {
+      navigate("/account")
+    }, 2000)
 
   }
 
@@ -93,12 +96,9 @@ export default function MailModify() {
           />
         </div>
 
-        {/* エラー / 成功メッセージ */}
+        {/* エラーメッセージ */}
         {errorMsg && (
           <p className="msg error-msg">{errorMsg}</p>
-        )}
-        {successMsg && (
-          <p className="msg success-msg">{successMsg}</p>
         )}
 
         {/* 保存ボタン */}
@@ -110,7 +110,7 @@ export default function MailModify() {
           {isLoading ? "送信中..." : "保存する"}
         </button>
 
-        {/* 戻るリンク */}
+        {/* キャンセル */}
         <button
           className="back-link"
           onClick={() => navigate("/account")}
@@ -119,6 +119,19 @@ export default function MailModify() {
         </button>
 
       </div>
+
+
+      {/* 完了モーダル */}
+      {showModal && (
+
+        <div className="complete-overlay">
+          <div className="complete-modal">
+            <div className="complete-icon">✓</div>
+            <p className="complete-text">変更が完了しました</p>
+          </div>
+        </div>
+
+      )}
 
     </div>
 

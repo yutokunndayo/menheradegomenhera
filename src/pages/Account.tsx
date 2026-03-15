@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
-import { clearUserCache, updateCachedAvatarUrl } from "../lib/userCache"
+import { updateCachedAvatarUrl } from "../lib/userCache"
 import { FiCamera } from "react-icons/fi"
 import TabBar from "../components/TabBar"
 import decor from "../assets/decor.png"

@@ -9,6 +9,7 @@ interface UserProfile {
     name: string;
     gender: boolean;
     partner: string | null;
+    avatarUrl: string | null; // 公開URL（Storageから生成済み）
 }
 
 function getCacheKey(userId: string) {
@@ -46,6 +47,11 @@ export function getCachedGender(): "boyfriend" | "girlfriend" | null {
     return null;
 }
 
+// 同期でアバターURLを読む
+export function getCachedAvatarUrl(): string | null {
+    return readCache()?.avatarUrl ?? null;
+}
+
 // ログアウト時に呼ぶ
 export function clearUserCache() {
     // 全ユーザーのキャッシュを削除
@@ -56,6 +62,13 @@ export function clearUserCache() {
     }
     keysToRemove.forEach(k => sessionStorage.removeItem(k));
     sessionStorage.removeItem("partner_guard_ok");
+}
+
+// アバターURLだけ更新する（アップロード後に呼ぶ）
+export function updateCachedAvatarUrl(url: string) {
+    const cached = readCache();
+    if (!cached) return;
+    writeCache({ ...cached, avatarUrl: url });
 }
 
 // プロフィール取得（キャッシュ優先・なければSupabaseから取得）
@@ -71,17 +84,25 @@ export async function getCachedProfile(): Promise<UserProfile | null> {
     // キャッシュなし → Supabaseから取得
     const { data: profile } = await supabase
         .from("profiles")
-        .select("id, name, gender, partner")
+        .select("id, name, gender, partner, avatar")
         .eq("id", user.id)
         .single();
 
     if (!profile) return null;
 
+    // avatarパスから公開URLを生成
+    let avatarUrl: string | null = null;
+    if (profile.avatar) {
+        const { data } = supabase.storage.from("avatars").getPublicUrl(profile.avatar);
+        avatarUrl = data.publicUrl;
+    }
+
     const result: UserProfile = {
-        id:      profile.id,
-        name:    profile.name ?? "",
-        gender:  profile.gender,
-        partner: profile.partner ?? null,
+        id:        profile.id,
+        name:      profile.name ?? "",
+        gender:    profile.gender,
+        partner:   profile.partner ?? null,
+        avatarUrl,
     };
 
     writeCache(result);

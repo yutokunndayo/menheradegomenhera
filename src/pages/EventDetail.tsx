@@ -1,22 +1,117 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { HiChevronLeft } from "react-icons/hi2";
-import happyImage  from "../assets/happy.png";
-import sadImage    from "../assets/sad.png";
-import angryImage  from "../assets/angry.png";
-import normalImage from "../assets/normal.png";
-import funImage    from "../assets/fun.png";
-import "../styles/diary.css";
+import { HiOutlineClock, HiOutlinePencil, HiOutlineUsers } from "react-icons/hi2";
+import { getCachedGender, getCachedProfile } from "../lib/userCache";
+import TitlePage from "./TitlePage";
+import "../styles/calendar.css";
 
-const EMOTION_IMAGES = [angryImage, sadImage, normalImage, happyImage, funImage];
-const EMOTION_NAMES  = ["しんどい", "かなしい", "ふつう", "うれしい", "たのしい"];
-const EMOTION_COLORS = ["#b0bec5", "#90caf9", "#ffcc80", "#f48fb1", "#ef9a9a"];
+type MyGender  = "boyfriend" | "girlfriend";
+type PickerOpen = "none" | "start-date" | "start-time" | "end-date" | "end-time";
 
-type MyGender = "boyfriend" | "girlfriend";
+const WEEKDAYS_SHORT = ["月", "火", "水", "木", "金", "土", "日"];
+const HOURS   = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
 
-function formatDateHeader(dateStr: string) {
-    const d    = new Date(dateStr + "T00:00:00");
+// ===== スクロールドラムロール =====
+// items: 表示する選択肢配列、value: 現在選択値、onChange: 変更コールバック
+const ITEM_H = 44; // 1項目の高さ(px)
+
+function DrumRoll({ items, value, onChange, accent }: {
+    items: string[];
+    value: string;
+    onChange: (v: string) => void;
+    accent: string;
+}) {
+    const ref = useRef<HTMLDivElement>(null);
+    const ignoreScroll = useRef(false);
+
+    // 選択値が変わったらスクロール位置を合わせる
+    useEffect(() => {
+        const idx = items.indexOf(value);
+        if (ref.current && idx >= 0) {
+            ignoreScroll.current = true;
+            ref.current.scrollTop = idx * ITEM_H;
+            setTimeout(() => { ignoreScroll.current = false; }, 100);
+        }
+    }, [value, items]);
+
+    const handleScroll = useCallback(() => {
+        if (ignoreScroll.current || !ref.current) return;
+        const idx = Math.round(ref.current.scrollTop / ITEM_H);
+        const clamped = Math.max(0, Math.min(items.length - 1, idx));
+        if (items[clamped] !== value) onChange(items[clamped]);
+    }, [items, value, onChange]);
+
+    return (
+        <div style={{ position: "relative", width: 80 }}>
+            {/* 選択中ハイライト帯 */}
+            <div style={{
+                position: "absolute",
+                top: ITEM_H * 2,
+                left: 4, right: 4,
+                height: ITEM_H,
+                background: `${accent}22`,
+                borderRadius: 8,
+                pointerEvents: "none",
+                zIndex: 1,
+            }} />
+            <div
+                ref={ref}
+                onScroll={handleScroll}
+                style={{
+                    height: ITEM_H * 5,
+                    overflowY: "scroll",
+                    scrollSnapType: "y mandatory",
+                    WebkitOverflowScrolling: "touch",
+                    scrollbarWidth: "none",
+                    position: "relative",
+                    zIndex: 2,
+                }}
+            >
+                {/* 上下に2個分のパディング */}
+                <div style={{ height: ITEM_H * 2 }} />
+                {items.map(item => (
+                    <div
+                        key={item}
+                        onClick={() => onChange(item)}
+                        style={{
+                            height: ITEM_H,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            scrollSnapAlign: "center",
+                            fontSize: item === value ? 26 : 18,
+                            fontWeight: item === value ? 700 : 400,
+                            color: item === value ? "#333" : "#bbb",
+                            cursor: "pointer",
+                            transition: "all 0.15s",
+                            userSelect: "none",
+                        }}
+                    >
+                        {item}
+                    </div>
+                ))}
+                <div style={{ height: ITEM_H * 2 }} />
+            </div>
+            {/* スクロールバー非表示 */}
+            <style>{`div::-webkit-scrollbar{display:none}`}</style>
+        </div>
+    );
+}
+
+// ===== ミニカレンダー日付生成 =====
+function buildMiniCalDays(year: number, month: number) {
+    const first  = new Date(year, month, 1);
+    const offset = (first.getDay() + 6) % 7;
+    const days: (Date | null)[] = [];
+    for (let i = 0; i < offset; i++) days.push(null);
+    const total = new Date(year, month + 1, 0).getDate();
+    for (let d = 1; d <= total; d++) days.push(new Date(year, month, d));
+    return days;
+}
+
+function formatDateBtn(d: Date) {
     const days = ["日", "月", "火", "水", "木", "金", "土"];
     return `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`;
 }
@@ -89,8 +184,43 @@ function DiaryDetail() {
         fetchDetail();
     }, [dateStr]);
 
-    const myColor   = myGender === "boyfriend" ? "#4dd0e1" : "#f5317f";
-    const pareColor = myGender === "boyfriend" ? "#f5317f" : "#4dd0e1";
+            if (isEditMode && editId) {
+                const { error } = await supabase.from("schedules")
+                    .update({ ...payload, user_id: ownerId }).eq("id", editId);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase.from("schedules")
+                    .insert({ ...payload, user_id: ownerId });
+                if (error) throw error;
+            }
+            navigate("/calendar", { replace: true });
+        } catch (e) { console.error(e); }
+        finally { setSaving(false); }
+    };
+
+    const handleDelete = async () => {
+        if (!editId) { navigate(-1); return; }
+        if (!window.confirm("この予定を削除しますか？")) return;
+        await supabase.from("schedules").delete().eq("id", editId);
+        navigate("/calendar", { replace: true });
+    };
+
+    const togglePicker = (p: PickerOpen) =>
+        setPicker(prev => prev === p ? "none" : p);
+
+    const selectDate = (d: Date, which: "start" | "end") => {
+        if (which === "start") { setStartDate(d); if (d > endDate) setEndDate(d); }
+        else setEndDate(d);
+        setPicker("none");
+    };
+
+    // gender取得前はタイトル画面（チラつき・真っ白防止）
+    if (!myGender) return <TitlePage hideTimer />;
+
+    // パートナーの予定として追加する場合はテーマを反転
+    const currentTheme: MyGender = isPartnerOwner
+        ? (myGender === "boyfriend" ? "girlfriend" : "boyfriend")
+        : myGender;
 
     return (
         <div className="diary-wrapper">

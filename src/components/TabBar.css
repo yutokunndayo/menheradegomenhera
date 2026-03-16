@@ -3,7 +3,7 @@
 .tabbar-wrapper {
     position: fixed;
     /* 全体を少し下に下げる */
-    bottom: 30px;
+    bottom: 130px;
     left: 0;
     right: 0;
     z-index: 100;

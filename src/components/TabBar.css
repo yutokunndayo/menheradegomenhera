@@ -7,8 +7,8 @@
   この2つを変えるだけで TabBar と Chat 入力欄が連動して動く
 */
 :root {
-    --tabbar-bottom: 0px;   /* ← タブバーを上下に動かすならここを変える */
-    --tabbar-height: 70px;  /* ← タブバーの高さが変わったらここを変える */
+    --tabbar-bottom: 20px;   /* ← タブバーを上下に動かすならここを変える */
+    --tabbar-height: 90px;  /* ← タブバーの高さが変わったらここを変える */
 }
 
 .tabbar-wrapper {

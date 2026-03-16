@@ -50,6 +50,13 @@ type ScheduleRow = {
   start_at: string;
 };
 
+// ===== 追加: アルバム行の型 =====
+type AlbumRow = {
+  id: string;
+  title: string;
+  created_at: string;
+};
+
 const log = {
   info: (msg: string, ...args: unknown[]) =>
     console.log(`%c[Sage] ${msg}`, "color:#4dd0e1;font-weight:bold", ...args),
@@ -82,7 +89,7 @@ async function callGeminiAPI(prompt: string): Promise<string> {
   return text;
 }
 
-// ===== 直近の予定取得 =====
+// ===== 直近の予定取得（30日以内） =====
 async function fetchUpcomingSchedules(myId: string, partnerId: string): Promise<ScheduleRow[]> {
   const from = new Date().toISOString();
   const to = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -94,7 +101,7 @@ async function fetchUpcomingSchedules(myId: string, partnerId: string): Promise<
     .gte("start_at", from)
     .lte("start_at", to)
     .order("start_at", { ascending: true })
-    .limit(3);
+    .limit(10); // 空き日計算のために多めに取得
 
   if (error) {
     log.warn("schedules 取得エラー:", error.message);
@@ -103,6 +110,65 @@ async function fetchUpcomingSchedules(myId: string, partnerId: string): Promise<
 
   log.info(`schedules: ${data?.length ?? 0}件`);
   return (data ?? []) as ScheduleRow[];
+}
+
+// ===== 追加: 直近のアルバムを取得（2人のもの） =====
+async function fetchRecentAlbums(myId: string, partnerId: string): Promise<AlbumRow[]> {
+  const { data, error } = await supabase
+    .from("albums")
+    .select("id, title, created_at")
+    .in("user_id", [myId, partnerId])
+    .order("created_at", { ascending: false })
+    .limit(3);
+
+  if (error) {
+    log.warn("albums 取得エラー:", error.message);
+    return [];
+  }
+
+  log.info(`albums: ${data?.length ?? 0}件`);
+  return (data ?? []) as AlbumRow[];
+}
+
+// ===== 追加: 予定のない空き日を直近30日から探す =====
+function findFreeDays(schedules: ScheduleRow[], maxDays = 3): string[] {
+  const scheduledDates = new Set(
+    schedules.map((s) => {
+      const d = new Date(s.start_at);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    })
+  );
+
+  const freeDays: string[] = [];
+  const today = new Date();
+
+  // 翌日から30日先を確認（今日は除く）
+  for (let i = 1; i <= 30 && freeDays.length < maxDays; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    // 土日を優先（デートしやすい）
+    const dow = d.getDay(); // 0=日, 6=土
+    const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    if (!scheduledDates.has(ymd) && (dow === 0 || dow === 6)) {
+      freeDays.push(`${d.getMonth() + 1}月${d.getDate()}日（${["日", "月", "火", "水", "木", "金", "土"][dow]}）`);
+    }
+  }
+
+  // 土日で足りなければ平日も追加
+  if (freeDays.length < maxDays) {
+    for (let i = 1; i <= 30 && freeDays.length < maxDays; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const dow = d.getDay();
+      if (dow === 0 || dow === 6) continue; // 土日はすでに上で処理済み
+      const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      if (!scheduledDates.has(ymd)) {
+        freeDays.push(`${d.getMonth() + 1}月${d.getDate()}日（${["日", "月", "火", "水", "木", "金", "土"][dow]}）`);
+      }
+    }
+  }
+
+  return freeDays;
 }
 
 // ===== 今日の彼女の日記をDBから直接取得 =====
@@ -138,14 +204,21 @@ async function fetchTodayDiary(partnerId: string): Promise<DiaryEntryRow | null>
   return (data as DiaryEntryRow) ?? null;
 }
 
-// ===== プロンプト生成 =====
-function buildPrompt(row: DiaryEntryRow, schedules: ScheduleRow[]): string {
+// ===== プロンプト生成（改修版） =====
+function buildPrompt(
+  row: DiaryEntryRow,
+  schedules: ScheduleRow[],
+  albums: AlbumRow[],
+  freeDays: string[]
+): string {
   const emotionLabel = EMOTION_NAMES[row.emotion];
   const diaryComment = row.text?.trim() || null;
 
-  const scheduleText =
+  // 直近の予定テキスト（上位3件）
+  const upcomingScheduleText =
     schedules.length > 0
       ? schedules
+          .slice(0, 3)
           .map((s) => {
             const d = new Date(s.start_at);
             return `・${d.getMonth() + 1}月${d.getDate()}日 「${s.name}」`;
@@ -153,30 +226,109 @@ function buildPrompt(row: DiaryEntryRow, schedules: ScheduleRow[]): string {
           .join("\n")
       : null;
 
-  const missionText = scheduleText
-    ? `直近の予定（${schedules[0].name}など）を使って、彼女を元気づけるような声かけを彼氏にアドバイスすること。例えば「その予定を一緒に楽しみにしようと伝えるのじゃ」のように、未来への期待で気持ちを上向かせる内容にすること。`
-    : `予定やアルバムのデータはないが、彼女の一言「${diaryComment ?? emotionLabel}」に寄り添う形で、彼氏が彼女を慰めるための具体的な一言をアドバイスすること。`;
+  // 空き日テキスト
+  const freeDayText =
+    freeDays.length > 0
+      ? freeDays.slice(0, 3).map((d) => `・${d}`).join("\n")
+      : null;
 
-  return `あなたは夜の街で数多の「メンヘラ女子」を対応し、幾度もの修羅場から生還してきた伝説のプロ黒服であり、今は恋愛の真理に到達した「黒服の仙人」です。
+  // アルバムテキスト（年月日・曜日付きで具体的に）
+  const WEEKDAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"] as const;
+  const albumText =
+    albums.length > 0
+      ? albums
+          .map((a) => {
+            const d = new Date(a.created_at);
+            const dow = WEEKDAY_NAMES[d.getDay()];
+            return `・「${a.title}」— ${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${dow}）`;
+          })
+          .join("\n")
+      : null;
+
+  // ミッションで使うアルバムの日付文字列（最新1件）
+  const latestAlbumDateStr = albums.length > 0
+    ? (() => {
+        const d = new Date(albums[0].created_at);
+        const dow = WEEKDAY_NAMES[d.getDay()];
+        return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${dow}）`;
+      })()
+    : "";
+
+  // ===== 分岐: 空き日 → デート誘い専用 / アルバム → 思い出話専用 / それ以外 =====
+
+  if (freeDayText) {
+    // ── ケース①: 空き日あり → デートに誘うアドバイスのみ（アルバム情報は渡さない）
+    return `あなたは夜の街で数多の「メンヘラ女子」を対応し、幾度もの修羅場から生還してきた伝説のプロ黒服であり、今は恋愛の真理に到達した「黒服の仙人」です。
 
 【彼女の今日の気持ち】
 気分: 「${emotionLabel}」
 一言: ${diaryComment ? `「${diaryComment}」` : "（コメントなし）"}
 
-${scheduleText ? `【2人の直近の予定】\n${scheduleText}` : "【状況】\n直近の予定・アルバムデータなし"}
+【2人の予定が空いている日（デート候補）】
+${freeDayText}
 
 【ミッション】
-${missionText}
+彼女が「${emotionLabel}」でしんどそうじゃ。
+空き日である ${freeDays[0]} を使ってデートに誘うよう彼氏にアドバイスせよ。
+「${freeDays[0]}に二人でどこか行こう」のように、必ず具体的な日付を入れてアドバイスすること。
 
 【条件】
 ・「〜じゃ」「〜するんじゃな」「坊主」といった、渋くて達観した仙人口調で話すこと。
-・例文は出さずに、あくまでアドバイスの言葉のみを出力すること。
-・一言日記で彼女がネガティブな感情になっていることを伝えること
-・バナーに表示するため、絶対に文の40文字程度の短いアドバイスにまとめること。
-・前置きや挨拶は一切不要。アドバイスの言葉のみを出力すること。
-・例 大丈夫？なにかあった？など心配してあげたほうが良いぞ
-・例 彼女がネガティブな用じゃ思い出を振り返ってみるのはどうじゃ
-・例 彼女がネガティブな用じゃ話を聞いてあげるがよいぞ`;
+・アドバイスの言葉のみを出力すること。前置きや挨拶は一切不要。
+・彼女がネガティブな感情になっていることを必ず伝えること。
+・バナーに表示するため、絶対に40文字程度の短いアドバイスにまとめること。
+・必ず ${freeDays[0]} という日付をアドバイスの中に含めること。
+・例: 彼女がしんどそうじゃ、${freeDays[0]}にデートに誘ってみるのはどうじゃ
+・例: 彼女がしんどそうじゃ、${freeDays[0]}にデートに誘ってみるのはどうじゃ`;
+
+  } else if (albumText) {
+    // ── ケース②: 空き日なし・アルバムあり → 思い出話のみ（デート誘いは触れない）
+    return `あなたは夜の街で数多の「メンヘラ女子」を対応し、幾度もの修羅場から生還してきた伝説のプロ黒服であり、今は恋愛の真理に到達した「黒服の仙人」です。
+
+【彼女の今日の気持ち】
+気分: 「${emotionLabel}」
+一言: ${diaryComment ? `「${diaryComment}」` : "（コメントなし）"}
+
+【2人の思い出アルバム】
+${albumText}
+
+【ミッション】
+彼女が「${emotionLabel}」でしんどそうじゃ。
+${latestAlbumDateStr}に作った「${albums[0].title}」アルバムの思い出話を持ち出して彼女を元気づけるよう彼氏に促せ。
+「${latestAlbumDateStr}の${albums[0].title}、楽しかったね」のように、必ずアルバムの具体的な日付とタイトルをアドバイスに含めること。
+
+【条件】
+・「〜じゃ」「〜するんじゃな」「坊主」といった、渋くて達観した仙人口調で話すこと。
+・アドバイスの言葉のみを出力すること。前置きや挨拶は一切不要。
+・彼女がネガティブな感情になっていることを必ず伝えること。
+・バナーに表示するため、絶対に40文字程度の短いアドバイスにまとめること。
+・必ず「${albums[0].title}」と「${latestAlbumDateStr}」をアドバイスの中に含めること。
+・例: 彼女が落ち込んでおるぞ、${latestAlbumDateStr}の「${albums[0].title}」の思い出話でもしてあげるのじゃ`;
+
+  } else {
+    // ── ケース③: 空き日もアルバムもない → 予定 or 日記コメントで寄り添う
+    const fallbackMission = upcomingScheduleText
+      ? `直近の予定（${schedules[0].name}など）を使って、彼女を元気づけるような声かけを彼氏にアドバイスせよ。未来への期待で気持ちを上向かせること。`
+      : `彼女の一言「${diaryComment ?? emotionLabel}」に寄り添い、彼氏が彼女を慰めるための具体的な一言をアドバイスせよ。`;
+
+    return `あなたは夜の街で数多の「メンヘラ女子」を対応し、幾度もの修羅場から生還してきた伝説のプロ黒服であり、今は恋愛の真理に到達した「黒服の仙人」です。
+
+【彼女の今日の気持ち】
+気分: 「${emotionLabel}」
+一言: ${diaryComment ? `「${diaryComment}」` : "（コメントなし）"}
+
+${upcomingScheduleText ? `【2人の直近の予定】\n${upcomingScheduleText}` : "【状況】\n直近の予定・アルバムデータなし"}
+
+【ミッション】
+彼女が「${emotionLabel}」でしんどそうじゃ。${fallbackMission}
+
+【条件】
+・「〜じゃ」「〜するんじゃな」「坊主」といった、渋くて達観した仙人口調で話すこと。
+・アドバイスの言葉のみを出力すること。前置きや挨拶は一切不要。
+・彼女がネガティブな感情になっていることを必ず伝えること。
+・バナーに表示するため、絶対に40文字程度の短いアドバイスにまとめること。
+・例: 彼女がネガティブじゃ、話を聞いてあげるがよいぞ`;
+  }
 }
 
 function SageOverlay() {
@@ -295,7 +447,7 @@ function SageOverlay() {
     };
   }, [user, authLoading]);
 
-  // 日記アドバイス生成
+  // 日記アドバイス生成（改修版: アルバム・空き日対応）
   const generateDiaryAdvice = useRef(
     async (
       row: DiaryEntryRow,
@@ -303,7 +455,8 @@ function SageOverlay() {
       currentPartnerId: string,
       source: "realtime" | "fallback"
     ) => {
-      const key = `${row.id}-${row.emotion}`;
+      // text も含めることで、感情が同じでもコメントを変えて再送したら再生成される
+      const key = `${row.id}-${row.emotion}-${row.text ?? ""}`;
       log.diary(
         `[${source}] key:${key} emotion:${row.emotion}(${EMOTION_NAMES[row.emotion]}) text:"${row.text ?? ""}"`
       );
@@ -329,9 +482,21 @@ function SageOverlay() {
       log.diary(`🔴 ネガティブ感情検知！[${source}] emotion: ${EMOTION_NAMES[row.emotion]} → アドバイス生成開始`);
 
       try {
-        const schedules = await fetchUpcomingSchedules(myUserId, currentPartnerId);
-        const prompt = buildPrompt(row, schedules);
-        log.info("プロンプト生成完了 schedules:", `${schedules.length}件`);
+        // スケジュール・アルバムを並列取得
+        const [schedules, albums] = await Promise.all([
+          fetchUpcomingSchedules(myUserId, currentPartnerId),
+          fetchRecentAlbums(myUserId, currentPartnerId),
+        ]);
+
+        // 空き日を計算
+        const freeDays = findFreeDays(schedules);
+
+        log.info(
+          `schedules:${schedules.length}件 albums:${albums.length}件 freeDays:${freeDays.length}件`
+        );
+
+        const prompt = buildPrompt(row, schedules, albums, freeDays);
+        log.info("プロンプト生成完了");
 
         const adviceText = await callGeminiAPI(prompt);
         if (!adviceText) {
@@ -341,7 +506,7 @@ function SageOverlay() {
 
         log.ai("生成アドバイス:", adviceText);
 
-        // branch方式: boyfriend側(user.id)に保存
+        // boyfriend側(user.id)に保存
         const { error: insertError } = await supabase
           .from("chat_emotion_contexts")
           .insert({ user_id: myUserId, emotion_text: adviceText });
@@ -440,8 +605,6 @@ function SageOverlay() {
   }, [user, authLoading, profileLoading, isBoyfriend, partnerId, isHiddenPath]);
 
   // 4) chat_emotion_contexts 監視
-  // main互換: partnerId保存のメッセージを受け取る
-  // branch互換: user.id保存のメッセージを受け取る
   useEffect(() => {
     if (authLoading || profileLoading) return;
     if (!user) return;

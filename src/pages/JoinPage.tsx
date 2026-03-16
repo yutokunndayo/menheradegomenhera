@@ -18,6 +18,7 @@ function JoinPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const ran = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fromId = params.get("from") || sessionStorage.getItem("pendingFromId");
   const [status, setStatus] = useState<JoinStatus>("loading");
@@ -28,29 +29,30 @@ function JoinPage() {
     ran.current = true;
 
     const connect = async () => {
-      if (!fromId) {
-        setErrorMsg("無効な招待リンクです");
-        setStatus("error");
-        return;
-      }
-
-      // 先に保存しておく（ログイン後も引き継ぐため）
-      sessionStorage.setItem("pendingFromId", fromId);
-
-      // ===== セッション確認（例外を投げないgetSessionを使う） =====
-      // getUser()はセッションなしで AuthSessionMissingError を投げるため
-      // getSession()で先にセッションの有無を確認する
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-      if (sessionError || !session?.user) {
-        // 未ログイン → needAuth表示（pendingFromIdは保持したまま）
-        setStatus("needAuth");
-        return;
-      }
-
-      const user = session.user;
-
       try {
+        if (!fromId) {
+          setErrorMsg("無効な招待リンクです");
+          setStatus("error");
+          return;
+        }
+
+        // ログイン/設定をまたいでも引き継ぐため最初に保存
+        sessionStorage.setItem("pendingFromId", fromId);
+
+        // 未ログイン判定は getSession で行う
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError || !session?.user) {
+          setStatus("needAuth");
+          return;
+        }
+
+        const user = session.user;
+
+        // 自分自身の招待リンクは禁止
         if (fromId === user.id) {
           sessionStorage.removeItem("pendingFromId");
           setErrorMsg("自分自身の招待リンクには参加できません");
@@ -58,6 +60,7 @@ function JoinPage() {
           return;
         }
 
+        // profiles 確認
         const { data: myProfile, error: myProfileError } = await supabase
           .from("profiles")
           .select("id, partner, gender")
@@ -66,13 +69,13 @@ function JoinPage() {
 
         if (myProfileError) throw myProfileError;
 
-        // profilesがない → setup未完了
+        // profiles がない → 未登録/未認証扱い
         if (!myProfile) {
-          setStatus("needSetup");
+          setStatus("needAuth");
           return;
         }
 
-        // gender未設定 → setup未完了
+        // 初期設定未完了
         if (myProfile.gender == null) {
           setStatus("needSetup");
           return;
@@ -80,8 +83,11 @@ function JoinPage() {
 
         // すでにパートナーがいる
         if (myProfile.partner) {
+          sessionStorage.removeItem("pendingFromId");
           setStatus("already");
-          setTimeout(() => navigate("/chat", { replace: true }), 5000);
+          timeoutRef.current = setTimeout(() => {
+            navigate("/chat", { replace: true });
+          }, 5000);
           return;
         }
 
@@ -94,7 +100,9 @@ function JoinPage() {
 
         sessionStorage.removeItem("pendingFromId");
         setStatus("success");
-        setTimeout(() => navigate("/chat", { replace: true }), 1500);
+        timeoutRef.current = setTimeout(() => {
+          navigate("/chat", { replace: true });
+        }, 1500);
       } catch (e: unknown) {
         console.error("join error:", e);
         setErrorMsg(e instanceof Error ? e.message : "接続に失敗しました");
@@ -103,6 +111,12 @@ function JoinPage() {
     };
 
     connect();
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [navigate, fromId]);
 
   return (
@@ -186,13 +200,15 @@ function JoinPage() {
           {status === "error" && (
             <>
               <div className="join-icon join-icon--error">!</div>
-              <p className="join-status-text join-status-text--error">{errorMsg}</p>
+              <p className="join-status-text join-status-text--error">
+                {errorMsg}
+              </p>
               <button
                 className="btn-primary"
-                onClick={() => navigate("/invite", { replace: true })}
+                onClick={() => navigate("/", { replace: true })}
                 style={{ marginTop: 16 }}
               >
-                招待画面に戻る
+                トップへ戻る
               </button>
             </>
           )}

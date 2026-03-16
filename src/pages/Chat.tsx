@@ -164,7 +164,6 @@ ${conversationText}`;
 
             if (partnerProfile) {
                 setPartnerName(partnerProfile.name ?? "パートナー");
-                // profiles.avatar には完全なURLが入っているのでそのまま使う
                 if (partnerProfile.avatar) setPartnerIcon(partnerProfile.avatar);
             }
 
@@ -259,14 +258,6 @@ ${conversationText}`;
 
     const theme = GENDER_THEME[myGender];
 
-    // ===== 入力バーのbottom値 =====
-    // キーボードなし: タブバー(約70px)の上に表示
-    // キーボードあり: キーボード直上に貼り付く(8px だけ隙間)
-    // ↓ この数値を変えると隙間を調整できる
-    const inputBarStyle = {
-        bottom: isFocused ? 0 : 70, // px
-    };
-
     return (
         <div className="chat-wrapper">
             <AppHeader variant="chat" name={partnerName} icon={partnerIcon} />
@@ -310,7 +301,8 @@ ${conversationText}`;
                 <div ref={bottomRef} />
             </div>
 
-            <div className="chat-input-bar" style={inputBarStyle}>
+            {/* isFocused時に .input-focused クラスを付けてCSS変数で bottom を切り替える */}
+            <div className={`chat-input-bar${isFocused ? " input-focused" : ""}`}>
                 <input
                     className="chat-input"
                     type="text"

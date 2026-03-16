@@ -150,6 +150,8 @@ function Setup() {
                     <div className="field-group">
                         <label className="field-label">あなたは？</label>
                         <div className="setup-gender-row">
+
+
                             <button
                                 className={`setup-gender-btn ${gender === true ? "selected" : ""}`}
                                 onClick={() => setGender(true)}
@@ -160,6 +162,7 @@ function Setup() {
                                 />
                                 <span>彼女</span>
                             </button>
+
 
                             <button
                                 className={`setup-gender-btn btn-boyfriend ${gender === false ? "selected-boyfriend" : ""}`}

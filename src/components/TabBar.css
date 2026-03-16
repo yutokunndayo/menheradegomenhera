@@ -2,7 +2,6 @@
 
 .tabbar-wrapper {
     position: fixed;
-    bottom: 3px;
     /* 全体を少し下に下げる */
     left: 0;
     right: 0;

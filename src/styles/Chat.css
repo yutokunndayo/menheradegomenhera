@@ -28,6 +28,28 @@
     top: 0;
     z-index: 100;
 }
+.chat-message-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.group-partner {
+  justify-content: flex-start;
+}
+
+.group-me {
+  justify-content: flex-end;
+}
+
+.chat-time {
+  font-size: 11px;
+  color: #999;
+  white-space: nowrap;
+  line-height: 1;
+  margin-bottom: 4px;
+}
 
 .chat-messages {
     flex: 1;

@@ -28,29 +28,29 @@ function JoinPage() {
     ran.current = true;
 
     const connect = async () => {
+      if (!fromId) {
+        setErrorMsg("無効な招待リンクです");
+        setStatus("error");
+        return;
+      }
+
+      // 先に保存しておく（ログイン後も引き継ぐため）
+      sessionStorage.setItem("pendingFromId", fromId);
+
+      // ===== セッション確認（例外を投げないgetSessionを使う） =====
+      // getUser()はセッションなしで AuthSessionMissingError を投げるため
+      // getSession()で先にセッションの有無を確認する
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session?.user) {
+        // 未ログイン → needAuth表示（pendingFromIdは保持したまま）
+        setStatus("needAuth");
+        return;
+      }
+
+      const user = session.user;
+
       try {
-        if (!fromId) {
-          setErrorMsg("無効な招待リンクです");
-          setStatus("error");
-          return;
-        }
-
-        // 先に保存しておく
-        sessionStorage.setItem("pendingFromId", fromId);
-
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (userError) throw userError;
-
-        // 未ログイン → 画面表示だけ
-        if (!user) {
-          setStatus("needAuth");
-          return;
-        }
-
         if (fromId === user.id) {
           sessionStorage.removeItem("pendingFromId");
           setErrorMsg("自分自身の招待リンクには参加できません");
@@ -66,24 +66,26 @@ function JoinPage() {
 
         if (myProfileError) throw myProfileError;
 
-        // profiles がない → authへ案内
+        // profilesがない → setup未完了
         if (!myProfile) {
-          setStatus("needAuth");
+          setStatus("needSetup");
           return;
         }
 
-        // gender未設定 → setupへ案内
+        // gender未設定 → setup未完了
         if (myProfile.gender == null) {
           setStatus("needSetup");
           return;
         }
 
+        // すでにパートナーがいる
         if (myProfile.partner) {
           setStatus("already");
           setTimeout(() => navigate("/chat", { replace: true }), 5000);
           return;
         }
 
+        // ペア接続
         const { error: rpcError } = await supabase.rpc("connect_partners", {
           inviter_id: fromId,
         });
@@ -93,9 +95,9 @@ function JoinPage() {
         sessionStorage.removeItem("pendingFromId");
         setStatus("success");
         setTimeout(() => navigate("/chat", { replace: true }), 1500);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error("join error:", e);
-        setErrorMsg(e?.message ?? "接続に失敗しました");
+        setErrorMsg(e instanceof Error ? e.message : "接続に失敗しました");
         setStatus("error");
       }
     };

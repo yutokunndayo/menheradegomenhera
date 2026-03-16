@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { PiGenderFemaleBold, PiGenderMaleBold } from "react-icons/pi";
 import AuthHeader from "../components/AuthHeader";
-import "../styles/login.css";
-import "../styles/setup.css";
+import "../styles/Login.css";
+import "../styles/Setup.css";
 
 type Gender = true | false | null;
 // true  = 彼女（ピンク）

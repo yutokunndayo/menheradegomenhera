@@ -1,9 +1,19 @@
 /* ===== tabbar.css ===== */
 
+/*
+  ===== タブバー位置の調整はここだけ =====
+  --tabbar-bottom : タブバー自体の bottom 値（上げたければ増やす）
+  --tabbar-height : タブバーの高さ（chat-input-bar の bottom 計算に使われる）
+  この2つを変えるだけで TabBar と Chat 入力欄が連動して動く
+*/
+:root {
+    --tabbar-bottom: 0px;   /* ← タブバーを上下に動かすならここを変える */
+    --tabbar-height: 70px;  /* ← タブバーの高さが変わったらここを変える */
+}
+
 .tabbar-wrapper {
     position: fixed;
-    /* 全体を少し下に下げる */
-    bottom: 20px;
+    bottom: var(--tabbar-bottom);
     left: 0;
     right: 0;
     z-index: 100;
@@ -15,8 +25,6 @@
     display: block;
     width: 100%;
     height: 28px;
-
-    /* 高さを増やしてラインを下に下げる */
     overflow: visible;
     margin-bottom: -20px;
 }
@@ -28,7 +36,6 @@
     justify-content: space-around;
     background: white;
     padding: 4px 8px env(safe-area-inset-bottom, 12px);
-    /* 上下を削る */
     position: relative;
 }
 
@@ -64,7 +71,6 @@
     box-shadow: 0 4px 16px rgba(245, 49, 127, 0.45);
     position: relative;
     top: -24px;
-    /* ラインのY座標変更に合わせて調整 */
     flex-shrink: 0;
     transition: transform 0.15s, box-shadow 0.15s;
 }

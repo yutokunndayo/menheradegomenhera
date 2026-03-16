@@ -27,7 +27,7 @@ const GeminiProvider: React.FC<GeminiProviderProps> = ({ children }) => {
 
   const generateChatResponse = async (prompt: string): Promise<string> => {
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-flash-lite-latest' });
       const result = await model.generateContent(prompt);
       return result.response.text();
     } catch (error) {

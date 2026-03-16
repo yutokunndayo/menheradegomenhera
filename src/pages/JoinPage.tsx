@@ -20,12 +20,14 @@ function JoinPage() {
 
     const connect = async () => {
       try {
+        // 招待リンクに必要なfromがない
         if (!fromId) {
           setErrorMsg("無効な招待リンクです");
           setStatus("error");
           return;
         }
 
+        // auth user を取得
         const {
           data: { user },
           error: userError,

@@ -1,26 +1,42 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import AuthHeader from "../components/AuthHeader";
-import { HiOutlineClipboard, HiOutlineCheckCircle } from "react-icons/hi2";
-import QRCode from "qrcode";
 import "../styles/Login.css";
 import "../styles/Invite.css";
 
-function InvitePage() {
-    const navigate = useNavigate();
-    const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+type JoinState =
+    | "loading"
+    | "needAuth"
+    | "needSetup"
+    | "alreadyPartnered"
+    | "selfInvite"
+    | "joining"
+    | "joined"
+    | "error";
 
-    const [inviteUrl, setInviteUrl] = useState("");
-    const [qrDataUrl, setQrDataUrl] = useState("");
-    const [copied, setCopied] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [connected, setConnected] = useState(false);
+function JoinPage() {
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const [joinState, setJoinState] = useState<JoinState>("loading");
     const [errorMsg, setErrorMsg] = useState("");
 
     useEffect(() => {
         const init = async () => {
             try {
+                const fromId = searchParams.get("from") || sessionStorage.getItem("pendingFromId");
+
+                if (!fromId) {
+                    setJoinState("error");
+                    setErrorMsg("招待情報が見つかりません");
+                    return;
+                }
+
+                // 最初に必ず保存
+                sessionStorage.setItem("pendingFromId", fromId);
+
                 const {
                     data: { user },
                     error: userError,
@@ -28,114 +44,76 @@ function InvitePage() {
 
                 if (userError) throw userError;
 
+                // 未ログイン
                 if (!user) {
-                    navigate("/login", { replace: true });
+                    setJoinState("needAuth");
                     return;
                 }
 
-                const pendingFromId = sessionStorage.getItem("pendingFromId");
+                // 自分自身の招待リンクは禁止
+                if (user.id === fromId) {
+                    sessionStorage.removeItem("pendingFromId");
+                    setJoinState("selfInvite");
+                    return;
+                }
 
                 const { data: profile, error: profileError } = await supabase
                     .from("profiles")
-                    .select("partner")
+                    .select("id, partner, gender")
                     .eq("id", user.id)
-                    .single();
+                    .maybeSingle();
 
                 if (profileError) throw profileError;
 
-                // すでにペア済みなら chat へ
-                if (profile?.partner) {
-                    sessionStorage.removeItem("pendingFromId");
+                // profiles未作成
+                if (!profile) {
+                    setJoinState("needAuth");
+                    return;
+                }
+
+                // gender未設定
+                if (profile.gender == null) {
+                    setJoinState("needSetup");
+                    return;
+                }
+
+                // すでにパートナーあり
+                if (profile.partner) {
+                    setJoinState("alreadyPartnered");
+                    timeoutRef.current = setTimeout(() => {
+                        navigate("/chat", { replace: true });
+                    }, 5000);
+                    return;
+                }
+
+                // 接続実行
+                setJoinState("joining");
+
+                const { error: rpcError } = await supabase.rpc("connect_partners", {
+                    inviter_id: fromId,
+                });
+
+                if (rpcError) throw rpcError;
+
+                sessionStorage.removeItem("pendingFromId");
+                setJoinState("joined");
+
+                timeoutRef.current = setTimeout(() => {
                     navigate("/chat", { replace: true });
-                    return;
-                }
-
-                // 未処理の招待リンク情報があれば、そのままペア接続を実行
-                if (pendingFromId) {
-                    if (pendingFromId === user.id) {
-                        sessionStorage.removeItem("pendingFromId");
-                        setErrorMsg("自分自身の招待リンクには参加できません");
-                        setLoading(false);
-                        return;
-                    }
-
-                    const { error: rpcError } = await supabase.rpc("connect_partners", {
-                        inviter_id: pendingFromId,
-                    });
-
-                    if (rpcError) throw rpcError;
-
-                    sessionStorage.removeItem("pendingFromId");
-                    setConnected(true);
-                    setLoading(false);
-
-                    setTimeout(() => navigate("/chat", { replace: true }), 1500);
-                    return;
-                }
-
-                // 通常の招待画面
-                const url = `${window.location.origin}/join?from=${user.id}`;
-                setInviteUrl(url);
-
-                try {
-                    const dataUrl = await QRCode.toDataURL(url, {
-                        width: 240,
-                        margin: 2,
-                        color: { dark: "#f5317f", light: "#ffffff" },
-                    });
-                    setQrDataUrl(dataUrl);
-                } catch (e) {
-                    console.error("QR生成エラー:", e);
-                }
-
-                setLoading(false);
-
-                // パートナー接続監視
-                pollingRef.current = setInterval(async () => {
-                    const { data } = await supabase
-                        .from("profiles")
-                        .select("partner")
-                        .eq("id", user.id)
-                        .single();
-
-                    if (data?.partner) {
-                        if (pollingRef.current) {
-                            clearInterval(pollingRef.current);
-                        }
-                        setConnected(true);
-                        setTimeout(() => navigate("/chat", { replace: true }), 1500);
-                    }
-                }, 3000);
+                }, 1500);
             } catch (e: any) {
-                console.error("invite init error:", e);
-                setErrorMsg(e?.message ?? "処理に失敗しました");
-                setLoading(false);
+                console.error("join init error:", e);
+                setJoinState("error");
+                setErrorMsg(e?.message ?? "参加処理に失敗しました");
             }
         };
 
         init();
 
         return () => {
-            if (pollingRef.current) {
-                clearInterval(pollingRef.current);
-            }
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
-    }, [navigate]);
-
-    const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(inviteUrl);
-        } catch {
-            const el = document.createElement("textarea");
-            el.value = inviteUrl;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand("copy");
-            document.body.removeChild(el);
-        }
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
-    };
+    }, [navigate, searchParams]);
 
     return (
         <div className="auth-wrapper">
@@ -144,77 +122,80 @@ function InvitePage() {
             <div className="auth-container">
                 <div className="auth-section">
                     <div className="invite-section">
-                        {loading ? (
+                        {joinState === "loading" || joinState === "joining" ? (
                             <>
                                 <div className="join-spinner" />
-                                <p className="invite-title">処理中...</p>
+                                <p className="invite-title">
+                                    {joinState === "joining" ? "接続中..." : "確認中..."}
+                                </p>
                             </>
-                        ) : errorMsg ? (
+                        ) : joinState === "needAuth" ? (
+                            <>
+                                <div className="join-icon join-icon--error">!</div>
+                                <p className="invite-title">ログインが必要です</p>
+                                <p className="invite-desc">
+                                    ログインまたは登録後、自動で招待処理を再開します
+                                </p>
+                                <button
+                                    className="invite-copy-btn"
+                                    onClick={() => navigate("/auth", { replace: true })}
+                                >
+                                    ログイン / 登録へ
+                                </button>
+                            </>
+                        ) : joinState === "needSetup" ? (
+                            <>
+                                <div className="join-icon join-icon--error">!</div>
+                                <p className="invite-title">初期設定が未完了です</p>
+                                <p className="invite-desc">
+                                    設定完了後、自動で招待処理を再開します
+                                </p>
+                                <button
+                                    className="invite-copy-btn"
+                                    onClick={() => navigate("/setup", { replace: true })}
+                                >
+                                    設定へ進む
+                                </button>
+                            </>
+                        ) : joinState === "alreadyPartnered" ? (
+                            <>
+                                <div className="join-icon join-icon--success">♡</div>
+                                <p className="invite-title">すでにパートナーがいます</p>
+                                <p className="invite-desc">
+                                    5秒後にチャット画面へ移動します
+                                </p>
+                            </>
+                        ) : joinState === "selfInvite" ? (
+                            <>
+                                <div className="join-icon join-icon--error">!</div>
+                                <p className="invite-title">この招待には参加できません</p>
+                                <p className="invite-desc">
+                                    自分自身の招待リンクは使用できません
+                                </p>
+                                <button
+                                    className="invite-copy-btn"
+                                    onClick={() => navigate("/invite", { replace: true })}
+                                >
+                                    招待画面へ
+                                </button>
+                            </>
+                        ) : joinState === "joined" ? (
+                            <>
+                                <div className="join-icon join-icon--success">♡</div>
+                                <p className="invite-title">パートナー登録が完了しました！</p>
+                                <p className="invite-desc">チャット画面へ移動します</p>
+                            </>
+                        ) : (
                             <>
                                 <div className="join-icon join-icon--error">!</div>
                                 <p className="invite-title">エラーが発生しました</p>
                                 <p className="invite-desc">{errorMsg}</p>
                                 <button
                                     className="invite-copy-btn"
-                                    onClick={() => navigate("/login", { replace: true })}
+                                    onClick={() => navigate("/auth", { replace: true })}
                                 >
                                     ログインへ
                                 </button>
-                            </>
-                        ) : connected ? (
-                            <>
-                                <div className="join-icon join-icon--success">♡</div>
-                                <p className="invite-title">ペアになりました！</p>
-                                <p className="invite-desc">チャット画面へ移動します</p>
-                            </>
-                        ) : (
-                            <>
-                                <p className="invite-title">パートナーを招待しよう</p>
-                                <p className="invite-desc">
-                                    下のリンクまたはQRコードをパートナーに送ってね
-                                    <br />
-                                    <span className="invite-waiting">
-                                        パートナーが参加するまで待機中...
-                                    </span>
-                                </p>
-
-                                <div className="invite-qr-wrap">
-                                    {qrDataUrl ? (
-                                        <img
-                                            src={qrDataUrl}
-                                            alt="招待QRコード"
-                                            className="invite-qr"
-                                        />
-                                    ) : (
-                                        <div className="invite-qr-placeholder">
-                                            QR生成に失敗しました
-                                        </div>
-                                    )}
-                                </div>
-
-                                <button
-                                    className={`invite-copy-btn ${copied ? "copied" : ""}`}
-                                    onClick={handleCopy}
-                                    disabled={!inviteUrl}
-                                >
-                                    {copied ? (
-                                        <>
-                                            <HiOutlineCheckCircle size={18} />
-                                            コピーしました！
-                                        </>
-                                    ) : (
-                                        <>
-                                            <HiOutlineClipboard size={18} />
-                                            招待リンクをコピー
-                                        </>
-                                    )}
-                                </button>
-
-                                <p className="invite-url-text">{inviteUrl}</p>
-
-                                <p className="invite-notice">
-                                    ※ パートナーが参加するまでアプリの機能は使えません
-                                </p>
                             </>
                         )}
                     </div>
@@ -224,4 +205,4 @@ function InvitePage() {
     );
 }
 
-export default InvitePage;
+export default JoinPage;

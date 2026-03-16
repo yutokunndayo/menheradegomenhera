@@ -30,18 +30,16 @@ function InvitePage() {
   useEffect(() => {
     const init = async () => {
       try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+        // getUser()はセッションなしでAuthSessionMissingErrorを投げるため
+        // getSession()でセッションの有無を先に確認する
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-        if (userError) throw userError;
-
-        if (!user) {
+        if (sessionError || !session?.user) {
           setViewState("needAuth");
           return;
         }
 
+        const user = session.user;
         const pendingFromId = sessionStorage.getItem("pendingFromId");
 
         const { data: profile, error: profileError } = await supabase
@@ -71,7 +69,7 @@ function InvitePage() {
           return;
         }
 
-        // ここが重要: 保存済み招待があれば先に接続を試す
+        // 保存済み招待があれば先に接続を試す
         if (pendingFromId) {
           if (pendingFromId === user.id) {
             sessionStorage.removeItem("pendingFromId");
@@ -103,10 +101,7 @@ function InvitePage() {
           const dataUrl = await QRCode.toDataURL(url, {
             width: 240,
             margin: 2,
-            color: {
-              dark: "#f5317f",
-              light: "#ffffff",
-            },
+            color: { dark: "#f5317f", light: "#ffffff" },
           });
           setQrDataUrl(dataUrl);
         } catch (qrError) {
@@ -132,17 +127,15 @@ function InvitePage() {
               clearInterval(pollingRef.current);
               pollingRef.current = null;
             }
-
             setViewState("connected");
-
             timeoutRef.current = setTimeout(() => {
               navigate("/chat", { replace: true });
             }, 1500);
           }
         }, 3000);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error("invite init error:", e);
-        setErrorMsg(e?.message ?? "処理に失敗しました");
+        setErrorMsg(e instanceof Error ? e.message : "処理に失敗しました");
         setViewState("error");
       }
     };
@@ -166,7 +159,6 @@ function InvitePage() {
       document.execCommand("copy");
       document.body.removeChild(el);
     }
-
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -215,9 +207,7 @@ function InvitePage() {
               <>
                 <div className="join-icon join-icon--success">♡</div>
                 <p className="invite-title">すでにパートナーがいます</p>
-                <p className="invite-desc">
-                  5秒後にチャット画面へ移動します
-                </p>
+                <p className="invite-desc">5秒後にチャット画面へ移動します</p>
               </>
             ) : viewState === "connected" ? (
               <>
@@ -250,15 +240,9 @@ function InvitePage() {
 
                 <div className="invite-qr-wrap">
                   {qrDataUrl ? (
-                    <img
-                      src={qrDataUrl}
-                      alt="招待QRコード"
-                      className="invite-qr"
-                    />
+                    <img src={qrDataUrl} alt="招待QRコード" className="invite-qr" />
                   ) : (
-                    <div className="invite-qr-placeholder">
-                      QR生成に失敗しました
-                    </div>
+                    <div className="invite-qr-placeholder">QR生成に失敗しました</div>
                   )}
                 </div>
 

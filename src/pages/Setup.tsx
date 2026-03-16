@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { PiGenderFemaleBold, PiGenderMaleBold } from "react-icons/pi";
 import AuthHeader from "../components/AuthHeader";
-import "../styles/Login.css";
-import "../styles/Setup.css";
+import "../styles/login.css";
+import "../styles/setup.css";
 
 type Gender = true | false | null;
 // true  = 彼女（ピンク）
@@ -65,7 +65,15 @@ function Setup() {
             });
             if (upsertError) throw upsertError;
 
-            navigate("/invite", { replace: true });
+            // ===== 招待リンクから来た場合はそちらを優先 =====
+            // JoinPage.tsx が sessionStorage に "pendingFromId" で招待者IDを保存している
+            const pendingFromId = sessionStorage.getItem("pendingFromId");
+            if (pendingFromId) {
+                // キーはそのまま残す（JoinPageで処理・削除される）
+                navigate(`/join?from=${pendingFromId}`, { replace: true });
+            } else {
+                navigate("/invite", { replace: true });
+            }
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : "エラーが発生しました");
         } finally {
@@ -142,8 +150,6 @@ function Setup() {
                     <div className="field-group">
                         <label className="field-label">あなたは？</label>
                         <div className="setup-gender-row">
-
-                            {/* 彼女ボタン → 選択時ピンク（selected クラス） */}
                             <button
                                 className={`setup-gender-btn ${gender === true ? "selected" : ""}`}
                                 onClick={() => setGender(true)}
@@ -155,7 +161,6 @@ function Setup() {
                                 <span>彼女</span>
                             </button>
 
-                            {/* 彼氏ボタン → hover水色・選択時水色（selected-boyfriend クラス） */}
                             <button
                                 className={`setup-gender-btn btn-boyfriend ${gender === false ? "selected-boyfriend" : ""}`}
                                 onClick={() => setGender(false)}

@@ -285,15 +285,25 @@ ${conversationText}`;
                                     )}
                                 </div>
                             )}
-                            <div className="chat-bubble-wrap">
-                                <div className={`chat-bubble ${bubbleClass}`}>
-                                    {msg.text.split("\n").map((line, j, arr) => (
-                                        <span key={j}>{line}{j < arr.length - 1 && <br />}</span>
-                                    ))}
+
+                            <div className={`chat-message-group ${isPartner ? "group-partner" : "group-me"}`}>
+                                {isPartner && <span className="chat-time">{msg.time}</span>}
+
+                                <div className="chat-bubble-wrap">
+                                    <div className={`chat-bubble ${bubbleClass}`}>
+                                        {msg.text.split("\n").map((line, j, arr) => (
+                                            <span key={j}>
+                                                {line}
+                                                {j < arr.length - 1 && <br />}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    {decoImage && (
+                                        <img src={decoImage} alt="" className={`bubble-deco ${decoClass}`} />
+                                    )}
                                 </div>
-                                {decoImage && (
-                                    <img src={decoImage} alt="" className={`bubble-deco ${decoClass}`} />
-                                )}
+
+                                {!isPartner && <span className="chat-time">{msg.time}</span>}
                             </div>
                         </div>
                     );

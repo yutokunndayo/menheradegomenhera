@@ -34,7 +34,6 @@ function JoinPage() {
         return;
       }
 
-
       // 先に保存しておく（ログイン後も引き継ぐため）
       sessionStorage.setItem("pendingFromId", fromId);
 
@@ -50,10 +49,6 @@ function JoinPage() {
       }
 
       const user = session.user;
-
-
-
-
 
       try {
         if (fromId === user.id) {
@@ -206,4 +201,5 @@ function JoinPage() {
     </div>
   );
 }
+
 export default JoinPage;

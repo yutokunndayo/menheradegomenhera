@@ -39,32 +39,14 @@
     padding-bottom: 140px;
 }
 
-.chat-deco-top {
-    width: 100%;
-    pointer-events: none;
-    margin-bottom: 8px;
-}
+.chat-deco-top  { width: 100%; pointer-events: none; margin-bottom: 8px; }
+.chat-deco-bottom { width: 100%; pointer-events: none; margin-top: 8px; }
 
-.chat-deco-bottom {
-    width: 100%;
-    pointer-events: none;
-    margin-top: 8px;
-}
-
-.chat-row {
-    display: flex;
-    align-items: flex-end;
-    gap: 6px;
-}
-
+.chat-row { display: flex; align-items: flex-end; gap: 6px; }
 .row-partner { justify-content: flex-start; }
 .row-me      { justify-content: flex-end; }
 
-.chat-row-icon {
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-}
+.chat-row-icon { width: 32px; height: 32px; flex-shrink: 0; }
 
 .bubble-partner-img {
     width: 32px;
@@ -83,10 +65,7 @@
     justify-content: center;
 }
 
-.chat-bubble-wrap {
-    position: relative;
-    max-width: 65%;
-}
+.chat-bubble-wrap { position: relative; max-width: 65%; }
 
 .chat-bubble {
     padding: 10px 14px;
@@ -97,30 +76,26 @@
     color: white;
 }
 
-.bubble-me-boyfriend      { background: var(--boyfriend-bubble); border-bottom-right-radius: 4px; }
+.bubble-me-boyfriend       { background: var(--boyfriend-bubble); border-bottom-right-radius: 4px; }
 .bubble-partner-girlfriend { background: var(--girlfriend-bubble); border-bottom-left-radius: 4px; }
-.bubble-me-girlfriend     { background: var(--pink-light); border-bottom-right-radius: 4px; }
-.bubble-partner-boyfriend  { background: var(--boyfriend-bubble); border-bottom-left-radius: 4px; }
+.bubble-me-girlfriend      { background: var(--pink-light);        border-bottom-right-radius: 4px; }
+.bubble-partner-boyfriend  { background: var(--boyfriend-bubble);  border-bottom-left-radius: 4px; }
 
-.bubble-deco {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-}
-
-.deco-top-right    { top: -6px; right: 4px; }
+.bubble-deco { position: absolute; width: 20px; height: 20px; object-fit: contain; }
+.deco-top-right    { top: -6px;  right: 4px; }
 .deco-bottom-right { bottom: -8px; right: -8px; }
 
 /* ===== 入力バー =====
-   bottom値はChat.tsxのインラインスタイルで動的に制御する。
-   ・キーボードなし: bottom: 70px（タブバー分）
-   ・キーボードあり: bottom: 8px（キーボード直上に貼り付く）
-   ここの値を変えたい場合はChat.tsxの inputBarStyle を編集する。
+   タブバーの位置と連動する仕組み:
+     通常時 → bottom: calc(--tabbar-height + --tabbar-bottom)
+     キーボード表示時(.input-focused) → bottom: 8px
+
+   タブバーの位置を変えたい場合は TabBar.css の
+   --tabbar-bottom と --tabbar-height だけ変えればここも自動で追従する。
 */
 .chat-input-bar {
     position: fixed;
-    /* bottomはChat.tsxのinlineStyleで上書き */
+    bottom: calc(var(--tabbar-height) + var(--tabbar-bottom));
     left: 0;
     right: 0;
     display: flex;
@@ -130,6 +105,13 @@
     background: white;
     border-top: 1px solid var(--pink-pale);
     z-index: 50;
+    transition: bottom 0.15s;
+}
+
+/* キーボード表示中はキーボード直上に貼り付く */
+/* ↓ キーボードとの隙間を変えたい場合はこの 8px を調整 */
+.chat-input-bar.input-focused {
+    bottom: 8px;
 }
 
 .chat-input {

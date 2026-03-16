@@ -287,8 +287,6 @@ ${conversationText}`;
                             )}
 
                             <div className={`chat-message-group ${isPartner ? "group-partner" : "group-me"}`}>
-                                {isPartner && <span className="chat-time">{msg.time}</span>}
-
                                 <div className="chat-bubble-wrap">
                                     <div className={`chat-bubble ${bubbleClass}`}>
                                         {msg.text.split("\n").map((line, j, arr) => (
@@ -303,7 +301,7 @@ ${conversationText}`;
                                     )}
                                 </div>
 
-                                {!isPartner && <span className="chat-time">{msg.time}</span>}
+                                <span className="chat-time">{msg.time}</span>
                             </div>
                         </div>
                     );

@@ -4,7 +4,6 @@ import { supabase } from "../lib/supabase";
 import { getCachedProfile, getCachedGender } from "../lib/userCache";
 import TabBar from "../components/TabBar";
 import AppHeader from "../components/AppHeader";
-import TitlePage from "./TitlePage";
 import "../styles/Calendar.css";
 
 // ===== 型定義 =====
@@ -138,8 +137,6 @@ function CalendarPage() {
             return isMine ? "#f5317f" : "#4dd0e1";
         }
     };
-
-    if (!myGender) return <TitlePage hideTimer />;
 
     return (
         <div className={`cal-wrapper theme-${myGender}`}>
